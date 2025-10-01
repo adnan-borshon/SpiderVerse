@@ -1,0 +1,822 @@
+# Stage 2 Implementation Guide for Replit AI Agent
+
+## Overview
+Build the **Heatwave Crisis** stage where players must decide whether to use emergency irrigation during a critical heat event. This stage teaches farmers how MODIS Land Surface Temperature and NDVI data help detect and manage crop stress.
+
+---
+
+## File: `js/stage2.js`
+
+### Core Functionality
+
+```javascript
+// Stage 2: Heatwave Crisis Management
+// This file handles the flowering stage heat stress scenario
+
+class Stage2 {
+  constructor(gameState) {
+    this.gameState = gameState;
+    this.heatwaveActive = false;
+    this.ndviDeclineRate = 0;
+  }
+
+  // Initialize Stage 2 UI and data
+  initialize() {
+    console.log('🌡️ Stage 2: Heatwave Crisis - Initializing...');
+    
+    // Update stage indicator
+    this.updateStageIndicator();
+    
+    // Show time transition
+    this.showTransition();
+    
+    // Update 3D scene to show mature wheat
+    this.update3DScene();
+    
+    // Load NASA data for this stage
+    this.loadNASAData();
+    
+    // Setup UI after transition
+    setTimeout(() => {
+      this.setupUI();
+      this.enableDecisionButtons();
+    }, 2500);
+  }
+
+  // Show "60 Days Later" transition
+  showTransition() {
+    const overlay = document.createElement('div');
+    overlay.className = 'stage-transition';
+    overlay.innerHTML = `
+      <div class="transition-content">
+        <h2>⏰ 60 Days Later...</h2>
+        <p>Your wheat is flowering - a critical growth stage</p>
+        <div class="loading-dots">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    
+    // Fade out after 2 seconds
+    setTimeout(() => {
+      overlay.classList.add('fade-out');
+      setTimeout(() => overlay.remove(), 500);
+    }, 2000);
+  }
+
+  // Update stage indicator in HUD
+  updateStageIndicator() {
+    document.querySelectorAll('.stage-indicator .stage').forEach((el, index) => {
+      el.classList.remove('active', 'completed');
+      if (index === 0) el.classList.add('completed');
+      if (index === 1) el.classList.add('active');
+    });
+  }
+
+  // Update 3D wheat field to show flowering stage
+  update3DScene() {
+    if (window.scene && window.wheatField) {
+      // Remove old wheat
+      window.scene.remove(window.wheatField);
+      
+      // Create flowering stage wheat (taller, darker green)
+      window.wheatField = window.createWheatField(2); // Stage 2 wheat
+      window.scene.add(window.wheatField);
+      
+      console.log('✅ 3D scene updated: Wheat now flowering');
+    }
+  }
+
+  // Load NASA data for Stage 2
+  loadNASAData() {
+    // Simulate MODIS LST and NDVI data
+    this.gameState.nasaData.modisLST = 2.5; // +2.5°C anomaly
+    this.gameState.nasaData.ndvi = 0.75; // Currently healthy
+    this.gameState.nasaData.ndviHistory = [
+      { day: 30, value: 0.72 },
+      { day: 45, value: 0.75 },
+      { day: 60, value: 0.75 }
+    ];
+    
+    console.log('📊 NASA Data loaded:', this.gameState.nasaData);
+  }
+
+  // Setup Stage 2 UI
+  setupUI() {
+    const panel = document.getElementById('decision-panel');
+    
+    panel.innerHTML = `
+      <div id="stage2-content">
+        <!-- Header with location context -->
+        <div class="stage-header">
+          <h2>⚠️ Stage 2: Heatwave Crisis</h2>
+          <div class="location-context">
+            <p><strong>📍 Your farm:</strong> <span id="stage2-location">${this.gameState.location.name}</span></p>
+            <p><strong>🌱 Crop stage:</strong> Flowering (heat-sensitive!)</p>
+            <p><strong>🌡️ Current status:</strong> Heatwave detected</p>
+          </div>
+        </div>
+
+        <!-- NASA Data Visualization Section -->
+        <div class="nasa-data-section">
+          ${this.renderMODISLSTCard()}
+          ${this.renderNDVICard()}
+        </div>
+
+        <!-- Decision Options -->
+        <div class="decision-options">
+          <h3>What will you do?</h3>
+          ${this.renderOptionCards()}
+        </div>
+
+        <!-- Confirm Button -->
+        <button id="stage2-confirm" class="confirm-btn" disabled>
+          Select an option first
+        </button>
+
+        <!-- Educational Note -->
+        <div class="edu-note">
+          <p>💡 <strong>Why this matters:</strong> Wheat flowering is highly sensitive to heat. 
+          Temperatures above 32°C can reduce grain weight by 5% per degree Celsius.</p>
+        </div>
+      </div>
+    `;
+
+    // Attach event listeners
+    this.attachEventListeners();
+  }
+
+  // Render MODIS LST Data Card
+  renderMODISLSTCard() {
+    const lstAnomaly = this.gameState.nasaData.modisLST;
+    const currentTemp = 33 + lstAnomaly; // Baseline 33°C + anomaly
+    const normalTemp = 33;
+    const gaugePercent = Math.min(100, (currentTemp / 40) * 100);
+
+    return `
+      <div class="nasa-data-card modis-card">
+        <div class="card-header">
+          <h3>🌡️ MODIS Land Surface Temperature</h3>
+          <span class="data-badge live">LIVE DATA</span>
+        </div>
+
+        <div class="temperature-gauge">
+          <div class="gauge-container">
+            <div class="gauge-fill" style="width: ${gaugePercent}%; background: ${this.getHeatColor(currentTemp)};">
+              <span class="temp-label">${currentTemp.toFixed(1)}°C</span>
+            </div>
+          </div>
+          <div class="gauge-markers">
+            <span class="marker normal" style="left: ${(normalTemp/40)*100}%;">
+              Normal: ${normalTemp}°C
+            </span>
+            <span class="marker critical" style="left: 80%;">
+              Critical: 32°C+
+            </span>
+          </div>
+        </div>
+
+        <div class="data-explanation">
+          <p><strong>Current reading:</strong> ${currentTemp.toFixed(1)}°C (${lstAnomaly > 0 ? '+' : ''}${lstAnomaly.toFixed(1)}°C anomaly)</p>
+          <p><strong>Impact forecast:</strong> ${this.getHeatImpactMessage(lstAnomaly)}</p>
+          <p class="data-source">📡 Source: MODIS Terra satellite, updated twice daily (10:30 AM/PM local)</p>
+        </div>
+
+        <button class="nasa-access-btn" id="view-modis-real">
+          🛰️ View Real MODIS Data for My Location
+        </button>
+      </div>
+    `;
+  }
+
+  // Render NDVI Health Monitor Card
+  renderNDVICard() {
+    const currentNDVI = this.gameState.nasaData.ndvi;
+    const history = this.gameState.nasaData.ndviHistory;
+
+    return `
+      <div class="nasa-data-card ndvi-card">
+        <div class="card-header">
+          <h3>🌿 NDVI Vegetation Health Monitor</h3>
+          <span class="data-badge healthy">HEALTHY</span>
+        </div>
+
+        <div class="ndvi-trend">
+          ${history.map(point => `
+            <div class="trend-point ${point.day === 60 ? 'current' : ''}" 
+                 style="background: ${this.getNDVIColor(point.value)};"
+                 data-tooltip="Day ${point.day}: ${point.value.toFixed(2)}">
+              <span class="day-label">Day ${point.day}</span>
+              <span class="value-label">${point.value.toFixed(2)}</span>
+            </div>
+          `).join('<div class="trend-line"></div>')}
+        </div>
+
+        <div class="data-explanation">
+          <p><strong>Current NDVI:</strong> ${currentNDVI.toFixed(2)} (Healthy range: 0.6-0.8)</p>
+          <p><strong>Trend:</strong> Stable ✓ No stress detected yet</p>
+          <p class="warning">⚠️ Heat stress may show in NDVI within 2-3 days if no action taken</p>
+          <p class="data-source">📡 Source: MODIS/Terra 16-day composite (250m resolution)</p>
+        </div>
+
+        <button class="nasa-access-btn secondary" id="check-ndvi-real">
+          📊 Check Real-Time NDVI (Giovanni)
+        </button>
+      </div>
+    `;
+  }
+
+  // Render decision option cards
+  renderOptionCards() {
+    return `
+      <div class="option-grid">
+        <!-- Option A: Emergency Irrigation -->
+        <div class="option-card" data-choice="emergencyIrrigation" id="option-a">
+          <div class="option-header">
+            <h4>💧 Option A: Emergency Cooling Irrigation</h4>
+            <span class="strategy-badge safe">SAFE STRATEGY</span>
+          </div>
+
+          <div class="option-content">
+            <p class="description">Apply overhead irrigation to lower canopy temperature during peak heat hours</p>
+
+            <div class="cost-benefit">
+              <div class="costs">
+                <p class="label">Costs:</p>
+                <ul>
+                  <li>💰 3,000 currency</li>
+                  <li>💧 30% of water reserve</li>
+                  <li>⏰ Labor + equipment rental</li>
+                </ul>
+              </div>
+
+              <div class="benefits">
+                <p class="label">Benefits:</p>
+                <ul>
+                  <li>✅ Reduces heat stress</li>
+                  <li>✅ Protects grain development</li>
+                  <li>✅ Heat factor: 0.96 (4% loss instead of 12.5%)</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="local-context">
+              <p>🌍 <strong>In ${this.gameState.location.name}:</strong> ${this.getLocalIrrigationAdvice()}</p>
+            </div>
+          </div>
+
+          <div class="option-footer">
+            <button class="select-option-btn" data-choice="emergencyIrrigation">
+              Select This Option
+            </button>
+          </div>
+        </div>
+
+        <!-- Option B: No Action -->
+        <div class="option-card" data-choice="wait" id="option-b">
+          <div class="option-header">
+            <h4>🌾 Option B: Accept Heat Stress</h4>
+            <span class="strategy-badge risky">RISKY STRATEGY</span>
+          </div>
+
+          <div class="option-content">
+            <p class="description">Save water and money, accept some yield reduction from heat stress</p>
+
+            <div class="cost-benefit">
+              <div class="costs">
+                <p class="label">Costs:</p>
+                <ul>
+                  <li>📉 Expected 12.5% yield loss</li>
+                  <li>⚠️ Potential quality reduction</li>
+                  <li>📊 Heat factor: 0.875</li>
+                </ul>
+              </div>
+
+              <div class="benefits">
+                <p class="label">Benefits:</p>
+                <ul>
+                  <li>💰 Saves 3,000 currency</li>
+                  <li>💧 Conserves water for later</li>
+                  <li>⏰ No immediate action needed</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="local-context">
+              <p>🌍 <strong>In ${this.gameState.location.name}:</strong> ${this.getLocalNoActionAdvice()}</p>
+            </div>
+          </div>
+
+          <div class="option-footer">
+            <button class="select-option-btn" data-choice="wait">
+              Select This Option
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // Attach event listeners
+  attachEventListeners() {
+    // Option selection
+    document.querySelectorAll('.select-option-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const choice = e.target.dataset.choice;
+        this.selectOption(choice);
+      });
+    });
+
+    // Confirm decision
+    document.getElementById('stage2-confirm').addEventListener('click', () => {
+      this.confirmDecision();
+    });
+
+    // NASA tool access buttons
+    document.getElementById('view-modis-real')?.addEventListener('click', () => {
+      this.openMODISWorldview();
+    });
+
+    document.getElementById('check-ndvi-real')?.addEventListener('click', () => {
+      this.openGiovanniNDVI();
+    });
+  }
+
+  // Handle option selection
+  selectOption(choice) {
+    // Remove previous selection
+    document.querySelectorAll('.option-card').forEach(card => {
+      card.classList.remove('selected');
+    });
+
+    // Add selection to clicked option
+    const selectedCard = document.querySelector(`[data-choice="${choice}"]`);
+    selectedCard.classList.add('selected');
+
+    // Store choice
+    this.selectedChoice = choice;
+
+    // Enable confirm button
+    const confirmBtn = document.getElementById('stage2-confirm');
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = `Confirm: ${choice === 'emergencyIrrigation' ? 'Emergency Irrigation' : 'Accept Heat Stress'}`;
+    confirmBtn.classList.add('enabled');
+  }
+
+  // Confirm and process decision
+  confirmDecision() {
+    if (!this.selectedChoice) return;
+
+    // Disable button to prevent double-click
+    document.getElementById('stage2-confirm').disabled = true;
+
+    // Store decision in game state
+    this.gameState.decisions.stage2 = this.selectedChoice;
+
+    // Process the decision
+    this.processDecision(this.selectedChoice);
+
+    // Show feedback
+    this.showDecisionFeedback(this.selectedChoice);
+
+    // Advance to Stage 3 after delay
+    setTimeout(() => {
+      this.advanceToStage3();
+    }, 3000);
+  }
+
+  // Process decision and update game state
+  processDecision(choice) {
+    const lstAnomaly = this.gameState.nasaData.modisLST;
+
+    if (choice === 'emergencyIrrigation') {
+      // Apply costs
+      this.gameState.budget -= 3000;
+      this.gameState.waterReserve -= 30;
+
+      // Improve heat factor
+      const baseHeatFactor = Math.max(0.2, 1 - 0.05 * (lstAnomaly - 0.5));
+      this.gameState.multipliers.heat = Math.min(1.0, baseHeatFactor + 0.10);
+
+      console.log('✅ Emergency irrigation applied');
+      console.log(`Heat factor improved: ${this.gameState.multipliers.heat.toFixed(2)}`);
+      console.log(`Budget: ${this.gameState.budget}, Water: ${this.gameState.waterReserve}%`);
+
+      // Visual effect: Show irrigation
+      this.triggerIrrigationEffect();
+
+    } else {
+      // No action - accept heat stress
+      this.gameState.multipliers.heat = Math.max(0.2, 1 - 0.05 * (lstAnomaly - 0.5));
+
+      console.log('⚠️ No action taken - heat stress accepted');
+      console.log(`Heat factor: ${this.gameState.multipliers.heat.toFixed(2)}`);
+
+      // Visual effect: Show heat stress
+      this.triggerHeatStressEffect();
+    }
+
+    // Update UI
+    this.updateBudgetDisplay();
+    this.updateWaterDisplay();
+  }
+
+  // Show decision feedback
+  showDecisionFeedback(choice) {
+    const impact = (1 - this.gameState.multipliers.heat) * 100;
+    
+    const feedback = document.createElement('div');
+    feedback.className = 'decision-feedback';
+    feedback.innerHTML = `
+      <div class="feedback-content">
+        <h3>${choice === 'emergencyIrrigation' ? '💧 Irrigation Applied' : '🌾 Heat Stress Accepted'}</h3>
+        <p class="decision-summary">
+          ${choice === 'emergencyIrrigation' 
+            ? `Emergency cooling irrigation active. Canopy temperature reduced by 3-4°C.`
+            : `No irrigation applied. Crops experiencing heat stress during flowering.`
+          }
+        </p>
+        
+        <div class="impact-stats">
+          <div class="stat">
+            <span class="label">Heat Stress Factor:</span>
+            <span class="value ${impact < 5 ? 'good' : impact < 10 ? 'warning' : 'danger'}">
+              ${this.gameState.multipliers.heat.toFixed(2)} (${impact.toFixed(1)}% loss)
+            </span>
+          </div>
+          
+          <div class="stat">
+            <span class="label">Remaining Budget:</span>
+            <span class="value">${this.gameState.budget.toLocaleString()} currency</span>
+          </div>
+          
+          <div class="stat">
+            <span class="label">Water Reserve:</span>
+            <span class="value">${this.gameState.waterReserve}%</span>
+          </div>
+        </div>
+
+        <div class="educational-insight">
+          <p><strong>📚 What you learned:</strong></p>
+          <p>${choice === 'emergencyIrrigation' 
+            ? `MODIS LST data gave you early warning (2-3 days before visible stress). Emergency irrigation during flowering protected grain development, demonstrating the value of proactive monitoring.`
+            : `You saved resources but accepted yield loss. In some climates with scarce water, this trade-off makes economic sense. MODIS data helped you make an informed decision about resource allocation.`
+          }</p>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(feedback);
+
+    // Fade in
+    setTimeout(() => feedback.classList.add('show'), 100);
+
+    // Fade out after 2.5 seconds
+    setTimeout(() => {
+      feedback.classList.remove('show');
+      setTimeout(() => feedback.remove(), 500);
+    }, 2500);
+  }
+
+  // Visual Effects
+  triggerIrrigationEffect() {
+    if (window.scene && window.createRainEffect) {
+      const rain = window.createRainEffect();
+      window.scene.add(rain);
+
+      // Animate rain particles falling
+      let frame = 0;
+      const animateRain = () => {
+        if (frame < 60) { // 1 second at 60fps
+          const positions = rain.geometry.attributes.position.array;
+          for (let i = 1; i < positions.length; i += 3) {
+            positions[i] -= 0.5; // Move down
+            if (positions[i] < 0) positions[i] = 30; // Reset to top
+          }
+          rain.geometry.attributes.position.needsUpdate = true;
+          frame++;
+          requestAnimationFrame(animateRain);
+        } else {
+          window.scene.remove(rain);
+        }
+      };
+      animateRain();
+    }
+  }
+
+  triggerHeatStressEffect() {
+    if (window.wheatField) {
+      // Slightly yellow the wheat to show stress
+      window.wheatField.children.forEach(plant => {
+        plant.material.color.setHex(0xA0B050); // Yellowish-green
+      });
+    }
+  }
+
+  // Update UI displays
+  updateBudgetDisplay() {
+    const budgetEl = document.getElementById('budget');
+    if (budgetEl) {
+      budgetEl.textContent = this.gameState.budget.toLocaleString();
+      budgetEl.classList.add('updated');
+      setTimeout(() => budgetEl.classList.remove('updated'), 1000);
+    }
+  }
+
+  updateWaterDisplay() {
+    const waterEl = document.getElementById('water');
+    if (waterEl) {
+      waterEl.textContent = this.gameState.waterReserve;
+      waterEl.classList.add('updated');
+      setTimeout(() => waterEl.classList.remove('updated'), 1000);
+    }
+  }
+
+  // NASA Tool Access
+  openMODISWorldview() {
+    const lat = this.gameState.location.coordinates.lat;
+    const lon = this.gameState.location.coordinates.lon;
+    const today = new Date().toISOString().split('T')[0];
+
+    const url = `https://worldview.earthdata.nasa.gov/?v=${lon-1},${lat-1},${lon+1},${lat+1}&l=MODIS_Terra_Land_Surface_Temp_Day&t=${today}&z=8`;
+
+    this.showNASAAccessModal({
+      title: 'View Real MODIS Temperature Data',
+      tool: 'NASA Worldview',
+      url: url,
+      instructions: [
+        `Your farm coordinates are centered: ${lat.toFixed(2)}°, ${lon.toFixed(2)}°`,
+        'Red/orange colors indicate hot areas (>35°C)',
+        'Yellow indicates warm (30-35°C)',
+        'Green indicates cooler temperatures',
+        'Click on your location to see exact temperature',
+        'Use the timeline at bottom to compare with previous days'
+      ],
+      educational: 'MODIS Terra satellite passes over your location at 10:30 AM local time, measuring surface temperature. This helps farmers time irrigation for maximum cooling effect during peak heat hours!'
+    });
+
+    this.gameState.nasaToolsUsed.worldview = true;
+  }
+
+  openGiovanniNDVI() {
+    const lat = this.gameState.location.coordinates.lat;
+    const lon = this.gameState.location.coordinates.lon;
+
+    this.showNASAAccessModal({
+      title: 'Check Crop Health (NDVI)',
+      tool: 'Giovanni Time Series Analysis',
+      url: 'https://giovanni.gsfc.nasa.gov/giovanni/',
+      instructions: [
+        'Select: MODIS/Terra Vegetation Indices (MOD13A2)',
+        'Choose: Area-Averaged Time Series',
+        `Draw a box around: ${lat.toFixed(2)}°, ${lon.toFixed(2)}°`,
+        'Date range: Last 30 days',
+        'Click "Plot Data"',
+        'Look for NDVI values: 0.6-0.8 = healthy crops',
+        'Sudden drops indicate stress before visible symptoms'
+      ],
+      educational: 'NDVI measures chlorophyll content using red and near-infrared light. It detects crop stress 5-7 days before human eyes can see it, allowing proactive intervention!'
+    });
+
+    this.gameState.nasaToolsUsed.giovanni = true;
+  }
+
+  showNASAAccessModal(config) {
+    const modal = document.createElement('div');
+    modal.className = 'nasa-access-modal';
+    modal.innerHTML = `
+      <div class="modal-overlay"></div>
+      <div class="modal-content">
+        <button class="close-modal">✕</button>
+        
+        <h3>${config.title}</h3>
+        <p class="tool-name">Using: <strong>${config.tool}</strong></p>
+        
+        <div class="instructions">
+          <h4>📋 Follow these steps:</h4>
+          <ol>
+            ${config.instructions.map(step => `<li>${step}</li>`).join('')}
+          </ol>
+        </div>
+        
+        <div class="educational-note">
+          <p>💡 <strong>Why this matters:</strong></p>
+          <p>${config.educational}</p>
+        </div>
+        
+        <div class="modal-actions">
+          <a href="${config.url}" target="_blank" class="open-tool-btn">
+            🚀 Open ${config.tool}
+          </a>
+          <button class="continue-game-btn">Continue Game</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Close handlers
+    modal.querySelector('.close-modal').addEventListener('click', () => modal.remove());
+    modal.querySelector('.continue-game-btn').addEventListener('click', () => modal.remove());
+    modal.querySelector('.modal-overlay').addEventListener('click', () => modal.remove());
+  }
+
+  // Helper functions
+  getHeatColor(temp) {
+    if (temp < 30) return '#4CAF50'; // Green - safe
+    if (temp < 32) return '#FFC107'; // Yellow - caution
+    if (temp < 35) return '#FF9800'; // Orange - warning
+    return '#F44336'; // Red - critical
+  }
+
+  getHeatImpactMessage(anomaly) {
+    if (anomaly <= 1) return 'Minor heat stress possible. Monitor closely.';
+    if (anomaly <= 2) return 'Moderate heat stress likely. Consider irrigation.';
+    if (anomaly <= 3) return '⚠️ Significant heat stress expected. Action recommended.';
+    return '🔥 Critical heat stress! Immediate intervention advised.';
+  }
+
+  getNDVIColor(value) {
+    if (value < 0.3) return '#8B4513'; // Brown - bare soil
+    if (value < 0.5) return '#DEB887'; // Tan - stressed
+    if (value < 0.7) return '#90EE90'; // Light green - moderate
+    return '#228B22'; // Dark green - healthy
+  }
+
+  getLocalIrrigationAdvice() {
+    const climate = this.gameState.location.climate;
+    if (climate.includes('Tropical')) {
+      return 'Water is typically abundant, but energy costs for pumping can be high.';
+    }
+    if (climate.includes('Subtropical')) {
+      return 'Mid-season water is often limited. Emergency irrigation is costly but may be necessary.';
+    }
+    return 'Water resources are limited. Many farmers use this strategy only for high-value crops.';
+  }
+
+  getLocalNoActionAdvice() {
+    const climate = this.gameState.location.climate;
+    if (climate.includes('Tropical')) {
+      return 'Rare strategy here due to water availability. Only used when irrigation systems fail.';
+    }
+    if (climate.includes('Subtropical')) {
+      return 'Common when water is scarce. Farmers accept lower yield to save water for critical stages.';
+    }
+    return 'Standard practice when water is very limited. Trade-off between yield and resource conservation.';
+  }
+
+  // Advance to Stage 3
+  advanceToStage3() {
+    console.log('⏭️ Advancing to Stage 3...');
+    
+    // Update stage in game state
+    this.gameState.currentStage = 3;
+    
+    // Initialize Stage 3
+    if (window.Stage3) {
+      const stage3 = new window.Stage3(this.gameState);
+      stage3.initialize();
+    } else {
+      console.error('Stage3 class not found!');
+    }
+  }
+
+  // Enable decision buttons
+  enableDecisionButtons() {
+    document.querySelectorAll('.select-option-btn').forEach(btn => {
+      btn.disabled = false;
+    });
+  }
+}
+
+// Export for use in main game
+window.Stage2 = Stage2;
+```
+
+---
+
+## CSS Styling: `css/stage2.css`
+
+```css
+/* Stage 2: Heatwave Crisis Styling */
+
+/* Stage Transition Animation */
+.stage-transition {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.5s ease-in;
+}
+
+.stage-transition.fade-out {
+  animation: fadeOut 0.5s ease-out;
+}
+
+.transition-content {
+  text-align: center;
+  color: white;
+}
+
+.transition-content h2 {
+  font-size: 3em;
+  margin-bottom: 20px;
+  animation: slideDown 0.8s ease-out;
+}
+
+.loading-dots {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+.loading-dots span {
+  width: 15px;
+  height: 15px;
+  background: #4CAF50;
+  border-radius: 50%;
+  animation: bounce 1.4s infinite ease-in-out both;
+}
+
+.loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+.loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+/* NASA Data Cards */
+.nasa-data-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px 0;
+  backdrop-filter: blur(10px);
+}
+
+.nasa-data-card.modis-card {
+  border-color: #FF9800;
+}
+
+.nasa-data-card.ndvi-card {
+  border-color: #4CAF50;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.data-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.85em;
+  font-weight: bold;
+}
+
+.data-badge.live {
+  background: #F44336;
+  color: white;
+  animation: pulse 2s infinite;
+}
+
+.data-badge.healthy {
+  background: #4CAF50;
+  color: white;
+}
+
+/* Temperature Gauge */
+.temperature-gauge {
+  margin: 20px 0;
+}
+
+.gauge-container {
+  height: 40px;
+  background: linear-gradient(to right, #4CAF50, #FFC107, #FF9800, #F44336);
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.gauge-fill {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 15px;
+  position: relative;
+}
+
+.temp-label {
+  background: rgba(0, 0, 0, 0.8);
+  padding: 5px 12px;
+  border-radius: 15px;
+  font-weight: bold;
+  font-size: 1.1em;

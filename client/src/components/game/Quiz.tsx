@@ -23,10 +23,9 @@ export const Quiz: React.FC = () => {
   
   const question = QUIZ_QUESTIONS[currentQuestion];
   
-  const handleAnswer = () => {
-    if (selectedAnswer === null) return;
-    
-    const correct = selectedAnswer === question.correctIndex;
+  const handleAnswer = (answerIndex: number) => {
+    setSelectedAnswer(answerIndex);
+    const correct = answerIndex === question.correctIndex;
     setIsCorrect(correct);
     setShowExplanation(true);
     answerQuizQuestion(correct);
@@ -61,7 +60,7 @@ export const Quiz: React.FC = () => {
               {question.options.map((option, index) => (
                 <button
                   key={index}
-                  onClick={() => !showExplanation && setSelectedAnswer(index)}
+                  onClick={() => !showExplanation && handleAnswer(index)}
                   disabled={showExplanation}
                   className={`w-full p-3 rounded-lg text-left transition-all border-2 ${
                     showExplanation
@@ -70,8 +69,6 @@ export const Quiz: React.FC = () => {
                         : selectedAnswer === index
                         ? 'border-red-500 bg-red-500/30'
                         : 'border-gray-600 bg-gray-800/30'
-                      : selectedAnswer === index
-                      ? 'border-yellow-500 bg-yellow-500/30'
                       : 'border-gray-600 bg-gray-800/30 hover:border-gray-500'
                   }`}
                 >
@@ -79,8 +76,6 @@ export const Quiz: React.FC = () => {
                     <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
                       showExplanation && index === question.correctIndex
                         ? 'border-green-500 bg-green-500'
-                        : selectedAnswer === index
-                        ? 'border-yellow-500 bg-yellow-500'
                         : 'border-gray-500'
                     }`}>
                       {showExplanation && index === question.correctIndex && '✓'}
@@ -103,15 +98,7 @@ export const Quiz: React.FC = () => {
           )}
           
           <div className="flex gap-3">
-            {!showExplanation ? (
-              <Button
-                className="w-full"
-                onClick={handleAnswer}
-                disabled={selectedAnswer === null}
-              >
-                Submit Answer
-              </Button>
-            ) : (
+            {showExplanation && (
               <Button className="w-full" onClick={handleNext}>
                 {questionsAnswered >= QUIZ_QUESTIONS.length - 1 ? 'Continue to Farm' : 'Next Question'}
               </Button>
