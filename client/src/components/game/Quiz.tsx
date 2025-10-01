@@ -1,27 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { useFarmGame } from '@/lib/stores/useFarmGame';
-import { QUIZ_QUESTIONS } from '@/lib/gameConstants';
+import { QUIZ_QUESTIONS, STAGE2_QUIZ_QUESTIONS } from '@/lib/gameConstants';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export const Quiz: React.FC = () => {
-  const { quizActive, setQuizActive, answerQuizQuestion, questionsAnswered } = useFarmGame();
+  const { quizActive, setQuizActive, answerQuizQuestion, questionsAnswered, phase } = useFarmGame();
+  
+  // Select appropriate quiz questions based on phase
+  const questions = phase === 'stage2' ? STAGE2_QUIZ_QUESTIONS : QUIZ_QUESTIONS;
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   
   useEffect(() => {
-    if (quizActive && questionsAnswered < QUIZ_QUESTIONS.length) {
+    if (quizActive && questionsAnswered < questions.length) {
       setCurrentQuestion(questionsAnswered);
       setSelectedAnswer(null);
       setShowExplanation(false);
     }
-  }, [quizActive, questionsAnswered]);
+  }, [quizActive, questionsAnswered, questions.length]);
   
   if (!quizActive) return null;
   
-  const question = QUIZ_QUESTIONS[currentQuestion];
+  const question = questions[currentQuestion];
+  const quizTitle = phase === 'stage2' ? 'MODIS & NDVI Knowledge Check' : 'SMAP Knowledge Check';
   
   const handleAnswer = (answerIndex: number) => {
     setSelectedAnswer(answerIndex);
@@ -32,7 +36,7 @@ export const Quiz: React.FC = () => {
   };
   
   const handleNext = () => {
-    if (questionsAnswered >= QUIZ_QUESTIONS.length - 1) {
+    if (questionsAnswered >= questions.length - 1) {
       setQuizActive(false);
     } else {
       setCurrentQuestion(currentQuestion + 1);
@@ -46,10 +50,10 @@ export const Quiz: React.FC = () => {
       <Card className="max-w-2xl w-full mx-4 bg-gradient-to-br from-blue-900 to-purple-900 text-white border-blue-500">
         <CardHeader>
           <CardTitle className="text-2xl">
-            🎓 SMAP Knowledge Check
+            🎓 {quizTitle}
           </CardTitle>
           <p className="text-sm text-gray-300">
-            Question {currentQuestion + 1} of {QUIZ_QUESTIONS.length}
+            Question {currentQuestion + 1} of {questions.length}
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -100,7 +104,7 @@ export const Quiz: React.FC = () => {
           <div className="flex gap-3">
             {showExplanation && (
               <Button className="w-full" onClick={handleNext}>
-                {questionsAnswered >= QUIZ_QUESTIONS.length - 1 ? 'Continue to Farm' : 'Next Question'}
+                {questionsAnswered >= questions.length - 1 ? 'Continue to Farm' : 'Next Question'}
               </Button>
             )}
           </div>

@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 export type GamePhase = 'welcome' | 'tutorial' | 'stage1' | 'stage2' | 'stage3' | 'results';
 export type Stage1Decision = 'irrigate' | 'noIrrigate' | null;
+export type Stage2Decision = 'emergencyIrrigation' | 'acceptHeatStress' | null;
 
 interface Location {
   name: string;
@@ -43,6 +44,7 @@ interface FarmGameState {
   
   // Decisions
   stage1Decision: Stage1Decision;
+  stage2Decision: Stage2Decision;
   
   // NASA data
   nasaData: NASAData;
@@ -76,6 +78,8 @@ interface FarmGameState {
   setLocation: (location: Location) => void;
   setStage1Decision: (decision: Stage1Decision) => void;
   processStage1Decision: () => void;
+  setStage2Decision: (decision: Stage2Decision) => void;
+  processStage2Decision: () => void;
   setTutorialStep: (step: number) => void;
   markNASAToolUsed: (tool: keyof FarmGameState['nasaToolsUsed']) => void;
   setQuizActive: (active: boolean) => void;
@@ -101,6 +105,7 @@ export const useFarmGame = create<FarmGameState>((set, get) => ({
   budget: 10000,
   waterReserve: 100,
   stage1Decision: null,
+  stage2Decision: null,
   nasaData: initialNASAData,
   multipliers: {
     germination: 1.0,
@@ -178,6 +183,42 @@ export const useFarmGame = create<FarmGameState>((set, get) => ({
     }
   },
   
+  setStage2Decision: (decision) => set({ stage2Decision: decision }),
+  
+  processStage2Decision: () => {
+    const { stage2Decision, nasaData } = get();
+    const lstAnomaly = nasaData.modisLST;
+    
+    if (stage2Decision === 'emergencyIrrigation') {
+      // Apply emergency irrigation costs and benefits
+      const baseHeatFactor = Math.max(0.2, 1 - 0.05 * (lstAnomaly - 0.5));
+      const improvedHeatFactor = Math.min(1.0, baseHeatFactor + 0.10);
+      
+      set({
+        budget: get().budget - 3000,
+        waterReserve: get().waterReserve - 30,
+        multipliers: {
+          ...get().multipliers,
+          heat: improvedHeatFactor
+        },
+        cropStage: 'growing',
+        weatherCondition: 'rainy'
+      });
+    } else {
+      // Accept heat stress
+      const heatFactor = Math.max(0.2, 1 - 0.05 * (lstAnomaly - 0.5));
+      
+      set({
+        multipliers: {
+          ...get().multipliers,
+          heat: heatFactor
+        },
+        cropStage: 'growing',
+        weatherCondition: 'sunny'
+      });
+    }
+  },
+  
   setTutorialStep: (step) => set({ tutorialStep: step }),
   
   markNASAToolUsed: (tool) => set({
@@ -205,6 +246,7 @@ export const useFarmGame = create<FarmGameState>((set, get) => ({
     budget: 10000,
     waterReserve: 100,
     stage1Decision: null,
+    stage2Decision: null,
     nasaData: initialNASAData,
     multipliers: {
       germination: 1.0,

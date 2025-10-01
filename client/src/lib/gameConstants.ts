@@ -72,7 +72,8 @@ export const QUIZ_QUESTIONS = [
       'Data is unavailable'
     ],
     correctIndex: 1,
-    explanation: 'Negative SMAP anomalies indicate drier than average conditions. -0.3 means moderately dry soil that may need irrigation.'
+    explanation: 'Negative SMAP anomalies indicate drier than average conditions. -0.3 means moderately dry soil that may need irrigation.',
+    stage: 1
   },
   {
     id: 'smap-2',
@@ -84,7 +85,8 @@ export const QUIZ_QUESTIONS = [
       'Moisture doesn\'t matter'
     ],
     correctIndex: 2,
-    explanation: 'Wheat seeds need consistent moisture for germination. Dry conditions (negative SMAP anomaly) can reduce germination rates significantly.'
+    explanation: 'Wheat seeds need consistent moisture for germination. Dry conditions (negative SMAP anomaly) can reduce germination rates significantly.',
+    stage: 1
   },
   {
     id: 'smap-3',
@@ -96,6 +98,49 @@ export const QUIZ_QUESTIONS = [
       'Every week'
     ],
     correctIndex: 2,
-    explanation: 'SMAP provides global soil moisture measurements every 2-3 days with 9km resolution, making it ideal for agricultural monitoring.'
+    explanation: 'SMAP provides global soil moisture measurements every 2-3 days with 9km resolution, making it ideal for agricultural monitoring.',
+    stage: 1
+  }
+];
+
+export const STAGE2_QUIZ_QUESTIONS = [
+  {
+    id: 'modis-1',
+    question: 'What does a MODIS LST anomaly of +2.5°C indicate during wheat flowering?',
+    options: [
+      'Normal temperature',
+      'Cooler than average - no concern',
+      'Warmer than average - potential heat stress',
+      'Data error'
+    ],
+    correctIndex: 2,
+    explanation: 'A positive MODIS LST anomaly means temperatures are warmer than the historical average. +2.5°C during sensitive flowering stages can significantly impact grain development.',
+    stage: 2
+  },
+  {
+    id: 'modis-2',
+    question: 'Why is wheat flowering particularly sensitive to heat stress?',
+    options: [
+      'Flowers need cold temperatures',
+      'High temperatures reduce grain weight and fertility',
+      'Heat helps the plant grow faster',
+      'Temperature doesn\'t affect flowering'
+    ],
+    correctIndex: 1,
+    explanation: 'Wheat flowering is highly heat-sensitive. Temperatures above 32°C can reduce pollen viability and grain weight by 5% per degree Celsius, significantly impacting final yield.',
+    stage: 2
+  },
+  {
+    id: 'ndvi-1',
+    question: 'What does NDVI measure in crops?',
+    options: [
+      'Soil temperature',
+      'Plant height',
+      'Chlorophyll content and plant health',
+      'Water content in soil'
+    ],
+    correctIndex: 2,
+    explanation: 'NDVI (Normalized Difference Vegetation Index) measures plant chlorophyll using red and near-infrared light reflectance. Healthy crops have high NDVI (0.6-0.8), while stressed crops show declining values.',
+    stage: 2
   }
 ];
