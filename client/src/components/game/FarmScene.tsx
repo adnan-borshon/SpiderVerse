@@ -4,9 +4,14 @@ import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { Terrain } from './Terrain';
 import { WheatField } from './WheatField';
 import { WeatherSystem } from './WeatherSystem';
+import { QuizMarker } from './QuizMarker';
+import { IrrigationEffect } from './IrrigationEffect';
+import { useFarmGame } from '@/lib/stores/useFarmGame';
 import * as THREE from 'three';
 
 export const FarmScene: React.FC = () => {
+  const { quizActive, stage1Decision, cropStage } = useFarmGame();
+  
   return (
     <Canvas shadows className="w-full h-full">
       <Suspense fallback={null}>
@@ -46,6 +51,12 @@ export const FarmScene: React.FC = () => {
         {/* Scene objects */}
         <Terrain />
         <WheatField />
+        
+        {/* Quiz marker appears when quiz is active */}
+        {quizActive && <QuizMarker position={[15, 5, 15]} />}
+        
+        {/* Irrigation effect when irrigating */}
+        <IrrigationEffect active={stage1Decision === 'irrigate' && cropStage === 'planting'} />
         
         {/* Grid helper for reference */}
         <gridHelper args={[100, 20, '#444444', '#666666']} position={[0, 0.01, 0]} />

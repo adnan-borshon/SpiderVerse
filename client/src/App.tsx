@@ -8,12 +8,16 @@ import { NASADataPanel } from "@/components/game/NASADataPanel";
 import { Stage1Panel } from "@/components/game/Stage1Panel";
 import { Quiz } from "@/components/game/Quiz";
 import { GameHUD } from "@/components/game/GameHUD";
+import { SoundManager } from "@/components/game/SoundManager";
 
 function App() {
   const { phase } = useFarmGame();
 
   return (
     <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
+      {/* Sound Manager - always active */}
+      <SoundManager />
+      
       {/* Welcome Screen */}
       {phase === 'welcome' && <WelcomeScreen />}
       
