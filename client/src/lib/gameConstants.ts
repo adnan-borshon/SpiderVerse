@@ -144,3 +144,45 @@ export const STAGE2_QUIZ_QUESTIONS = [
     stage: 2
   }
 ];
+
+export const STAGE3_QUIZ_QUESTIONS = [
+  {
+    id: 'flood-1',
+    question: 'What does a 60% flood probability forecast mean for harvest decisions?',
+    options: [
+      'It will definitely flood',
+      'There is a 60% chance of flood in the forecast period',
+      'Only 60% of the area will flood',
+      'Flood risk is low'
+    ],
+    correctIndex: 1,
+    explanation: 'A 60% flood probability means there is a 6 in 10 chance that flood conditions will occur in the specified time period. This is considered high risk and requires careful decision-making.',
+    stage: 3
+  },
+  {
+    id: 'flood-2',
+    question: 'How does NASA\'s Flood Data Pathfinder predict flood risk?',
+    options: [
+      'Only uses local rain gauges',
+      'Combines satellite rainfall data with terrain models',
+      'Uses only historical flood records',
+      'Predicts by farmer reports'
+    ],
+    correctIndex: 1,
+    explanation: 'NASA\'s Flood Data Pathfinder integrates satellite rainfall estimates (GPM, TRMM) with digital elevation models to predict flood probability. This provides advanced warning up to 7 days ahead.',
+    stage: 3
+  },
+  {
+    id: 'flood-3',
+    question: 'Why is early harvest at 90% maturity sometimes economically justified?',
+    options: [
+      'It always gives higher profits',
+      'Labor is cheaper early in season',
+      'Avoiding catastrophic flood losses can offset lower yield and price',
+      'Early wheat tastes better'
+    ],
+    correctIndex: 2,
+    explanation: 'While early harvest reduces yield by 15% and gets lower prices, it guarantees harvest safety. When flood risk is 60%, the expected value often favors early harvest to avoid potential 54% crop losses.',
+    stage: 3
+  }
+];

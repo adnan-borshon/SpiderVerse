@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useFarmGame } from '@/lib/stores/useFarmGame';
-import { QUIZ_QUESTIONS, STAGE2_QUIZ_QUESTIONS } from '@/lib/gameConstants';
+import { QUIZ_QUESTIONS, STAGE2_QUIZ_QUESTIONS, STAGE3_QUIZ_QUESTIONS } from '@/lib/gameConstants';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -8,7 +8,8 @@ export const Quiz: React.FC = () => {
   const { quizActive, setQuizActive, answerQuizQuestion, questionsAnswered, phase } = useFarmGame();
   
   // Select appropriate quiz questions based on phase
-  const questions = phase === 'stage2' ? STAGE2_QUIZ_QUESTIONS : QUIZ_QUESTIONS;
+  const questions = phase === 'stage3' ? STAGE3_QUIZ_QUESTIONS : 
+                   phase === 'stage2' ? STAGE2_QUIZ_QUESTIONS : QUIZ_QUESTIONS;
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
@@ -25,7 +26,8 @@ export const Quiz: React.FC = () => {
   if (!quizActive) return null;
   
   const question = questions[currentQuestion];
-  const quizTitle = phase === 'stage2' ? 'MODIS & NDVI Knowledge Check' : 'SMAP Knowledge Check';
+  const quizTitle = phase === 'stage3' ? 'Flood Forecasting Knowledge Check' :
+                   phase === 'stage2' ? 'MODIS & NDVI Knowledge Check' : 'SMAP Knowledge Check';
   
   const handleAnswer = (answerIndex: number) => {
     setSelectedAnswer(answerIndex);

@@ -1,0 +1,71 @@
+Build Stage 3: Harvest Decision for the NASA Farm Navigators game. Stage 1 and Stage 2 are already complete and working.
+
+REQUIREMENTS:
+
+1. Create stage3.js file with the following scenario:
+   - Day 100: Wheat is 90% mature (needs 7 more days to reach 100%)
+   - Flood Data Pathfinder shows 60% flood probability in next 7 days
+   - Market prices: Mature wheat = $8/bushel, Immature wheat = $6.50/bushel
+
+2. Build the UI in the right decision panel:
+   - Title: "Stage 3: Harvest Timing Decision"
+   - Show current maturity level: 90% (visual progress bar)
+   - Display flood risk map visualization (color-coded risk zones)
+   - Show market price comparison chart
+
+3. Create two decision options:
+
+   OPTION A: Harvest Early (Today)
+   - Description: "Harvest immediately at 90% maturity to avoid flood risk"
+   - Cost: $0
+   - Maturity penalty: Reduce potential yield by 15% (multiply by 0.85)
+   - Flood risk: Only 10% chance of damage during harvest
+   - Market price: $6.50 per bushel
+   - Impact preview: "Guaranteed safe harvest but lower price"
+
+   OPTION B: Wait for Full Ripeness (7 days)
+   - Description: "Wait 7 days for 100% maturity and better market price"
+   - Cost: $0
+   - No maturity penalty (1.0 multiplier)
+   - Flood risk: 60% probability of flood causing 54% crop loss
+   - Market price: $8.00 per bushel (if no flood)
+   - Impact preview: "Higher profit potential but risky"
+
+4. Decision processing logic:
+```javascript
+function processStage3Decision(choice) {
+  if (choice === 'harvestEarly') {
+    // Early harvest path
+    gameState.decisions.stage3 = 'harvestEarly';
+    gameState.potentialYield *= 0.85; // Maturity penalty
+    gameState.multipliers.flood = 0.91; // Minor harvest weather impact
+    gameState.pricePerBushel = 6.5;
+    gameState.day += 1; // 1 day to harvest
+    
+    showFeedback('Safe harvest completed! Lower yield but no flood risk.');
+    
+  } else if (choice === 'waitForRipeness') {
+    // Wait for maturity path
+    gameState.decisions.stage3 = 'waitForRipeness';
+    gameState.day += 7;
+    gameState.pricePerBushel = 8.0;
+    
+    // Roll dice for flood (60% probability)
+    const floodOccurs = Math.random() < 0.60;
+    
+    if (floodOccurs) {
+      gameState.multipliers.flood = 0.46; // 54% loss
+      showFeedback('FLOOD OCCURRED! Heavy crop losses. Only 46% of crop salvaged.');
+    } else {
+      gameState.multipliers.flood = 1.0; // No flood
+      showFeedback('Perfect conditions! Full maturity achieved with premium price.');
+    }
+  }
+  
+  // Move to final results
+  calculateFinalYield();
+  calculateProfit();
+  calculateWaterEfficiency();
+  calculateResilience();
+  showFinalResults();
+}

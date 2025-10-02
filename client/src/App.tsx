@@ -7,6 +7,7 @@ import { FarmScene } from "@/components/game/FarmScene";
 import { NASADataPanel } from "@/components/game/NASADataPanel";
 import { Stage1Panel } from "@/components/game/Stage1Panel";
 import { Stage2Panel } from "@/components/game/Stage2Panel";
+import { Stage3Panel } from "@/components/game/Stage3Panel";
 import { StageTransition } from "@/components/game/StageTransition";
 import { Quiz } from "@/components/game/Quiz";
 import { GameHUD } from "@/components/game/GameHUD";
@@ -16,6 +17,7 @@ function App() {
   const { phase, quizActive, questionsAnswered, setPhase } = useFarmGame();
   const [showTransition, setShowTransition] = useState(false);
   const [stage2Ready, setStage2Ready] = useState(false);
+  const [stage3Ready, setStage3Ready] = useState(false);
   
   // Show transition when entering Stage 2
   useEffect(() => {
@@ -28,6 +30,13 @@ function App() {
   useEffect(() => {
     if (phase === 'stage1' && !quizActive && questionsAnswered >= 3) {
       setStage2Ready(true);
+    }
+  }, [phase, quizActive, questionsAnswered]);
+  
+  // Auto-advance to Stage 3 after Stage 2 quiz complete
+  useEffect(() => {
+    if (phase === 'stage2' && !quizActive && questionsAnswered >= 3) {
+      setStage3Ready(true);
     }
   }, [phase, quizActive, questionsAnswered]);
 
@@ -104,16 +113,44 @@ function App() {
               <NASADataPanel />
               <Stage2Panel />
               <Quiz />
+              
+              {/* Advance to Stage 3 button */}
+              {stage3Ready && !quizActive && (
+                <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 pointer-events-auto">
+                  <button
+                    onClick={() => {
+                      // Reset quiz counters for Stage 3
+                      useFarmGame.setState({ questionsAnswered: 0, quizScore: 0 });
+                      setPhase('stage3');
+                      setStage3Ready(false);
+                    }}
+                    className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold text-lg rounded-lg shadow-lg hover:shadow-xl transition-all hover:scale-105 animate-pulse"
+                  >
+                    ⏭️ Advance to Stage 3: Harvest Decision
+                  </button>
+                </div>
+              )}
             </>
           )}
         </>
       )}
       
-      {/* Stage 3 placeholder */}
+      {/* Stage 3 Game */}
       {phase === 'stage3' && (
-        <div className="w-full h-full flex items-center justify-center bg-gray-900 text-white">
-          <p className="text-2xl">Stage 3 - Coming Soon!</p>
-        </div>
+        <>
+          <Suspense fallback={
+            <div className="w-full h-full flex items-center justify-center bg-gray-900 text-white">
+              <p>Loading farm...</p>
+            </div>
+          }>
+            <FarmScene />
+          </Suspense>
+          
+          <GameHUD />
+          <NASADataPanel />
+          <Stage3Panel />
+          <Quiz />
+        </>
       )}
       
       {/* Results placeholder */}

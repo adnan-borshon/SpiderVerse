@@ -3,6 +3,7 @@ import { create } from "zustand";
 export type GamePhase = 'welcome' | 'tutorial' | 'stage1' | 'stage2' | 'stage3' | 'results';
 export type Stage1Decision = 'irrigate' | 'noIrrigate' | null;
 export type Stage2Decision = 'emergencyIrrigation' | 'acceptHeatStress' | null;
+export type Stage3Decision = 'harvestEarly' | 'waitForRipeness' | null;
 
 interface Location {
   name: string;
@@ -45,6 +46,7 @@ interface FarmGameState {
   // Decisions
   stage1Decision: Stage1Decision;
   stage2Decision: Stage2Decision;
+  stage3Decision: Stage3Decision;
   
   // NASA data
   nasaData: NASAData;
@@ -67,8 +69,14 @@ interface FarmGameState {
   questionsAnswered: number;
   
   // Crop visualization state
-  cropStage: 'none' | 'planting' | 'germinating' | 'sprouted' | 'growing';
+  cropStage: 'none' | 'planting' | 'germinating' | 'sprouted' | 'growing' | 'mature' | 'harvested';
   germinationRate: number;
+  
+  // Stage 3 specific
+  cropMaturity: number;
+  pricePerBushel: number;
+  day: number;
+  floodOccurred: boolean;
   
   // Weather state
   weatherCondition: 'sunny' | 'cloudy' | 'rainy';
@@ -80,6 +88,8 @@ interface FarmGameState {
   processStage1Decision: () => void;
   setStage2Decision: (decision: Stage2Decision) => void;
   processStage2Decision: () => void;
+  setStage3Decision: (decision: Stage3Decision) => void;
+  processStage3Decision: () => void;
   setTutorialStep: (step: number) => void;
   markNASAToolUsed: (tool: keyof FarmGameState['nasaToolsUsed']) => void;
   setQuizActive: (active: boolean) => void;
@@ -106,6 +116,7 @@ export const useFarmGame = create<FarmGameState>((set, get) => ({
   waterReserve: 100,
   stage1Decision: null,
   stage2Decision: null,
+  stage3Decision: null,
   nasaData: initialNASAData,
   multipliers: {
     germination: 1.0,
@@ -126,6 +137,10 @@ export const useFarmGame = create<FarmGameState>((set, get) => ({
   cropStage: 'none',
   germinationRate: 0,
   weatherCondition: 'sunny',
+  cropMaturity: 90,
+  pricePerBushel: 6.5,
+  day: 100,
+  floodOccurred: false,
   
   setPhase: (phase) => set({ phase }),
   
@@ -219,6 +234,44 @@ export const useFarmGame = create<FarmGameState>((set, get) => ({
     }
   },
   
+  setStage3Decision: (decision) => set({ stage3Decision: decision }),
+  
+  processStage3Decision: () => {
+    const { stage3Decision } = get();
+    
+    if (stage3Decision === 'harvestEarly') {
+      // Early harvest path
+      set({
+        potentialYield: get().potentialYield * 0.85,
+        multipliers: {
+          ...get().multipliers,
+          flood: 0.91
+        },
+        pricePerBushel: 6.5,
+        day: get().day + 1,
+        cropStage: 'harvested',
+        weatherCondition: 'sunny',
+        floodOccurred: false
+      });
+    } else if (stage3Decision === 'waitForRipeness') {
+      // Wait for maturity path
+      const floodOccurs = Math.random() < 0.60;
+      
+      set({
+        day: get().day + 7,
+        pricePerBushel: 8.0,
+        cropMaturity: 100,
+        floodOccurred: floodOccurs,
+        multipliers: {
+          ...get().multipliers,
+          flood: floodOccurs ? 0.46 : 1.0
+        },
+        cropStage: floodOccurs ? 'harvested' : 'mature',
+        weatherCondition: floodOccurs ? 'rainy' : 'sunny'
+      });
+    }
+  },
+  
   setTutorialStep: (step) => set({ tutorialStep: step }),
   
   markNASAToolUsed: (tool) => set({
@@ -247,6 +300,7 @@ export const useFarmGame = create<FarmGameState>((set, get) => ({
     waterReserve: 100,
     stage1Decision: null,
     stage2Decision: null,
+    stage3Decision: null,
     nasaData: initialNASAData,
     multipliers: {
       germination: 1.0,
@@ -266,6 +320,10 @@ export const useFarmGame = create<FarmGameState>((set, get) => ({
     questionsAnswered: 0,
     cropStage: 'none',
     germinationRate: 0,
-    weatherCondition: 'sunny'
+    weatherCondition: 'sunny',
+    cropMaturity: 90,
+    pricePerBushel: 6.5,
+    day: 100,
+    floodOccurred: false
   })
 }));
