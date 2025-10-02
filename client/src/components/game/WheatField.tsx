@@ -1,91 +1,28 @@
-import React, { useRef, useMemo, useEffect, useState } from 'react';
+import React, { useRef, useMemo, useEffect } from 'react';
 import { useFarmGame } from '@/lib/stores/useFarmGame';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
-
-// Irrigation water droplet particles
-const IrrigationEffect: React.FC<{ active: boolean }> = ({ active }) => {
-  const particlesRef = useRef<THREE.Points>(null);
-  const [particles] = useState(() => {
-    const count = 200;
-    const positions = new Float32Array(count * 3);
-    const velocities = new Float32Array(count * 3);
-    
-    for (let i = 0; i < count; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 80;
-      positions[i * 3 + 1] = Math.random() * 15 + 5;
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 80;
-      
-      velocities[i * 3] = (Math.random() - 0.5) * 0.2;
-      velocities[i * 3 + 1] = -Math.random() * 0.5 - 0.3;
-      velocities[i * 3 + 2] = (Math.random() - 0.5) * 0.2;
-    }
-    
-    return { positions, velocities };
-  });
-  
-  useFrame(() => {
-    if (!active || !particlesRef.current) return;
-    
-    const positions = particlesRef.current.geometry.attributes.position.array as Float32Array;
-    
-    for (let i = 0; i < positions.length / 3; i++) {
-      positions[i * 3] += particles.velocities[i * 3];
-      positions[i * 3 + 1] += particles.velocities[i * 3 + 1];
-      positions[i * 3 + 2] += particles.velocities[i * 3 + 2];
-      
-      // Reset particle when it hits ground
-      if (positions[i * 3 + 1] < 0.5) {
-        positions[i * 3] = (Math.random() - 0.5) * 80;
-        positions[i * 3 + 1] = Math.random() * 10 + 10;
-        positions[i * 3 + 2] = (Math.random() - 0.5) * 80;
-      }
-    }
-    
-    particlesRef.current.geometry.attributes.position.needsUpdate = true;
-  });
-  
-  if (!active) return null;
-  
-  return (
-    <points ref={particlesRef}>
-      <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          count={particles.positions.length / 3}
-          array={particles.positions}
-          itemSize={3}
-        />
-      </bufferGeometry>
-      <pointsMaterial size={0.15} color="#4A90E2" transparent opacity={0.7} />
-    </points>
-  );
-};
 
 interface WheatPlantProps {
   position: [number, number, number];
   germinated: boolean;
   growth: number;
   germinationRate: number;
-  healthFactor: number; // 0-1, based on soil moisture and irrigation decisions
-  heatStress: boolean; // Shows visual heat stress
 }
 
-const WheatPlant: React.FC<WheatPlantProps> = ({ position, germinated, growth, germinationRate, healthFactor, heatStress }) => {
+const WheatPlant: React.FC<WheatPlantProps> = ({ position, germinated, growth, germinationRate }) => {
   const meshRef = useRef<THREE.Mesh>(null);
   const groupRef = useRef<THREE.Group>(null);
   
   useFrame((state) => {
     if (meshRef.current && germinated) {
-      // Gentle swaying animation - more vigorous if healthy, weaker if stressed
-      const swayIntensity = heatStress ? 0.08 : 0.05;
-      meshRef.current.rotation.z = Math.sin(state.clock.elapsedTime * 2 + position[0]) * swayIntensity;
+      // Gentle swaying animation
+      meshRef.current.rotation.z = Math.sin(state.clock.elapsedTime * 2 + position[0]) * 0.05;
     }
     
-    // Dying plants or stressed plants droop over time
-    if (groupRef.current && (!germinated || healthFactor < 0.5) && growth > 0.1) {
-      const droopAmount = germinated ? (1 - healthFactor) * 0.3 : Math.min(growth * 0.8, 0.6);
-      groupRef.current.rotation.x = droopAmount;
+    // Dying plants droop over time
+    if (groupRef.current && !germinated && growth > 0.1) {
+      groupRef.current.rotation.x = Math.min(growth * 0.8, 0.6);
     }
   });
   
@@ -112,29 +49,16 @@ const WheatPlant: React.FC<WheatPlantProps> = ({ position, germinated, growth, g
   }
   
   // Calculate plant dimensions based on growth with more dramatic stages
-  const height = 0.3 + growth * 5 * (0.7 + healthFactor * 0.3); // Height affected by health
+  const height = 0.3 + growth * 5; // Taller plants
   
   // Color progression: light green -> vibrant green -> golden wheat
-  // Color is also affected by health and heat stress
-  let baseColor = '#90EE90'; // Light green (seed stage)
-  if (growth > 0.2) baseColor = '#76D275'; // Young sprout
-  if (growth > 0.4) baseColor = '#4CAF50'; // Growing
-  if (growth > 0.6) baseColor = '#388E3C'; // Mature green
-  if (growth > 0.8) baseColor = '#7FBA00'; // Pre-harvest
-  if (growth > 0.9) baseColor = '#9ACD32'; // Harvest ready
-  if (growth >= 1.0) baseColor = '#DAA520'; // Fully mature golden wheat (Stage 3)
-  
-  // Apply health and stress modifiers to color
-  let color = baseColor;
-  if (healthFactor < 0.7) {
-    // Stressed plants turn yellowish-brown
-    const stressFactor = 1 - healthFactor;
-    color = growth < 0.5 ? '#B8A678' : '#A89968'; // Yellowish stressed color
-  }
-  if (heatStress && healthFactor < 0.8) {
-    // Heat stressed plants turn more brown/yellow
-    color = growth < 0.5 ? '#C4A661' : '#B89450'; // Heat stress brown-yellow
-  }
+  let color = '#90EE90'; // Light green (seed stage)
+  if (growth > 0.2) color = '#76D275'; // Young sprout
+  if (growth > 0.4) color = '#4CAF50'; // Growing
+  if (growth > 0.6) color = '#388E3C'; // Mature green
+  if (growth > 0.8) color = '#7FBA00'; // Pre-harvest
+  if (growth > 0.9) color = '#9ACD32'; // Harvest ready
+  if (growth >= 1.0) color = '#DAA520'; // Fully mature golden wheat (Stage 3)
   
   return (
     <group position={position}>
@@ -215,36 +139,8 @@ const WheatPlant: React.FC<WheatPlantProps> = ({ position, germinated, growth, g
 };
 
 export const WheatField: React.FC = () => {
-  const { cropStage, germinationRate, phase, floodOccurred, stage1Decision, stage2Decision, weatherCondition } = useFarmGame();
+  const { cropStage, germinationRate, phase, floodOccurred } = useFarmGame();
   const [growth, setGrowth] = React.useState(0);
-  
-  // Calculate health factor based on player decisions
-  const healthFactor = useMemo(() => {
-    let health = 1.0;
-    
-    // Stage 1 decision impact on health
-    if (stage1Decision === 'noIrrigate') {
-      health *= 0.7; // No irrigation at planting = stressed plants
-    } else if (stage1Decision === 'irrigate') {
-      health *= 1.0; // Irrigated = healthy
-    }
-    
-    // Stage 2 decision impact on health
-    if (phase === 'stage2' || phase === 'stage3' || phase === 'results') {
-      if (stage2Decision === 'acceptHeatStress') {
-        health *= 0.6; // Accepting heat stress = severe stress
-      } else if (stage2Decision === 'emergencyIrrigation') {
-        health *= 0.95; // Emergency irrigation helps but has slight penalty
-      }
-    }
-    
-    return Math.max(0.3, Math.min(1.0, health)); // Clamp between 0.3 and 1.0
-  }, [stage1Decision, stage2Decision, phase]);
-  
-  // Determine if plants are experiencing heat stress
-  const heatStress = useMemo(() => {
-    return phase === 'stage2' && weatherCondition === 'sunny';
-  }, [phase, weatherCondition]);
   
   // Pre-calculate plant positions
   const plantPositions = useMemo(() => {
@@ -302,13 +198,7 @@ export const WheatField: React.FC = () => {
     return null;
   }
   
-  console.log(`[WheatField] Rendering ${plantPositions.length} plants at growth ${growth.toFixed(2)}, germination rate: ${germinationRate}, health: ${healthFactor.toFixed(2)}`);
-  
-  // Show irrigation effect when player irrigates
-  const showIrrigationEffect = useMemo(() => {
-    return (stage1Decision === 'irrigate' && phase === 'stage1') ||
-           (stage2Decision === 'emergencyIrrigation' && phase === 'stage2');
-  }, [stage1Decision, stage2Decision, phase]);
+  console.log(`[WheatField] Rendering ${plantPositions.length} plants at growth ${growth.toFixed(2)}, germination rate: ${germinationRate}`);
   
   return (
     <group>
@@ -319,13 +209,8 @@ export const WheatField: React.FC = () => {
           germinated={germinationMap[i]}
           growth={growth}
           germinationRate={germinationRate}
-          healthFactor={healthFactor}
-          heatStress={heatStress}
         />
       ))}
-      
-      {/* Irrigation water droplets effect */}
-      <IrrigationEffect active={showIrrigationEffect} />
       
       {/* Flood water overlay if flood occurred in Stage 3 */}
       {floodOccurred && phase === 'stage3' && (
