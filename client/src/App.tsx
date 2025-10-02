@@ -12,6 +12,7 @@ import { StageTransition } from "@/components/game/StageTransition";
 import { Quiz } from "@/components/game/Quiz";
 import { GameHUD } from "@/components/game/GameHUD";
 import { SoundManager } from "@/components/game/SoundManager";
+import { FinalResults } from "@/components/game/FinalResults";
 
 function App() {
   const { phase, quizActive, questionsAnswered, setPhase } = useFarmGame();
@@ -39,6 +40,15 @@ function App() {
       setStage3Ready(true);
     }
   }, [phase, quizActive, questionsAnswered]);
+  
+  // Auto-advance to Results after Stage 3 quiz complete
+  useEffect(() => {
+    if (phase === 'stage3' && !quizActive && questionsAnswered >= 3) {
+      setTimeout(() => {
+        setPhase('results');
+      }, 2000);
+    }
+  }, [phase, quizActive, questionsAnswered, setPhase]);
 
   return (
     <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
@@ -153,12 +163,8 @@ function App() {
         </>
       )}
       
-      {/* Results placeholder */}
-      {phase === 'results' && (
-        <div className="w-full h-full flex items-center justify-center bg-gray-900 text-white">
-          <p className="text-2xl">Results - Coming Soon!</p>
-        </div>
-      )}
+      {/* Final Results */}
+      {phase === 'results' && <FinalResults />}
     </div>
   );
 }
