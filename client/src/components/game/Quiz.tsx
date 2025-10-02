@@ -39,7 +39,8 @@ export const Quiz: React.FC = () => {
   };
   
   const handleNext = () => {
-    if (questionsAnswered >= questions.length - 1) {
+    // Check if there's a next question
+    if (currentQuestion + 1 >= questions.length) {
       setQuizActive(false);
     } else {
       setCurrentQuestion(currentQuestion + 1);
