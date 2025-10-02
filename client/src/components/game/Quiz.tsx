@@ -34,10 +34,12 @@ export const Quiz: React.FC = () => {
     const correct = answerIndex === question.correctIndex;
     setIsCorrect(correct);
     setShowExplanation(true);
-    answerQuizQuestion(correct);
   };
   
   const handleNext = () => {
+    // Record the answer when clicking Next
+    answerQuizQuestion(isCorrect);
+    
     if (questionsAnswered >= questions.length - 1) {
       setQuizActive(false);
     } else {
