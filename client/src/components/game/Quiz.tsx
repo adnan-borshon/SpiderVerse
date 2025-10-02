@@ -16,7 +16,7 @@ export const Quiz: React.FC = () => {
   const [isCorrect, setIsCorrect] = useState(false);
   
   useEffect(() => {
-    if (quizActive && questionsAnswered < questions.length) {
+    if (quizActive && questionsAnswered < questions.length && !showExplanation) {
       setCurrentQuestion(questionsAnswered);
       setSelectedAnswer(null);
       setShowExplanation(false);

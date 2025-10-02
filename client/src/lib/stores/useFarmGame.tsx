@@ -142,7 +142,13 @@ export const useFarmGame = create<FarmGameState>((set, get) => ({
   day: 100,
   floodOccurred: false,
   
-  setPhase: (phase) => set({ phase }),
+  setPhase: (phase) => {
+    const currentStage = phase === 'stage1' ? 1 : 
+                        phase === 'stage2' ? 2 : 
+                        phase === 'stage3' ? 3 : 
+                        get().currentStage;
+    set({ phase, currentStage });
+  },
   
   setLocation: (location) => {
     // Update NASA data based on location

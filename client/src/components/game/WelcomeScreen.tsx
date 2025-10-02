@@ -64,7 +64,7 @@ export const WelcomeScreen: React.FC = () => {
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="-- Select Region --" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white">
                 <SelectItem value="iowa-usa">Iowa, USA (Corn Belt)</SelectItem>
                 <SelectItem value="punjab-india">Punjab, India (Wheat Belt)</SelectItem>
                 <SelectItem value="saopaulo-brazil">São Paulo, Brazil (Soybean Region)</SelectItem>
