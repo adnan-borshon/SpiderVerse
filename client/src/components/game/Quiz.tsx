@@ -15,13 +15,14 @@ export const Quiz: React.FC = () => {
   const [showExplanation, setShowExplanation] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   
+  // Reset quiz UI when quiz becomes active or when switching stages
   useEffect(() => {
-    if (quizActive && questionsAnswered < questions.length && !showExplanation) {
+    if (quizActive) {
       setCurrentQuestion(questionsAnswered);
       setSelectedAnswer(null);
       setShowExplanation(false);
     }
-  }, [quizActive, questionsAnswered, questions.length]);
+  }, [quizActive]);
   
   if (!quizActive) return null;
   
