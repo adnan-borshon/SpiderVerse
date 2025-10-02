@@ -58,6 +58,7 @@ const WheatPlant: React.FC<WheatPlantProps> = ({ position, germinated, growth, g
   if (growth > 0.6) color = '#388E3C'; // Mature green
   if (growth > 0.8) color = '#7FBA00'; // Pre-harvest
   if (growth > 0.9) color = '#9ACD32'; // Harvest ready
+  if (growth >= 1.0) color = '#DAA520'; // Fully mature golden wheat (Stage 3)
   
   return (
     <group position={position}>
@@ -138,7 +139,7 @@ const WheatPlant: React.FC<WheatPlantProps> = ({ position, germinated, growth, g
 };
 
 export const WheatField: React.FC = () => {
-  const { cropStage, germinationRate } = useFarmGame();
+  const { cropStage, germinationRate, phase, floodOccurred } = useFarmGame();
   const [growth, setGrowth] = React.useState(0);
   
   // Pre-calculate plant positions
@@ -186,6 +187,10 @@ export const WheatField: React.FC = () => {
       }, 80); // Faster update rate (was 100ms)
       
       return () => clearInterval(interval);
+    } else if (cropStage === 'mature') {
+      // Stage 3: Show fully mature golden wheat
+      console.log('[WheatField] Stage 3 - Showing mature golden wheat');
+      setGrowth(1.0);
     }
   }, [cropStage]);
   
@@ -206,6 +211,20 @@ export const WheatField: React.FC = () => {
           germinationRate={germinationRate}
         />
       ))}
+      
+      {/* Flood water overlay if flood occurred in Stage 3 */}
+      {floodOccurred && phase === 'stage3' && (
+        <mesh position={[0, 0.5, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[100, 100]} />
+          <meshStandardMaterial 
+            color="#4A90E2" 
+            transparent 
+            opacity={0.6} 
+            roughness={0.1}
+            metalness={0.3}
+          />
+        </mesh>
+      )}
     </group>
   );
 };
