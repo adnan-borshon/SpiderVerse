@@ -1,11 +1,12 @@
 import React, { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera, Fog } from '@react-three/drei';
 import { Terrain } from './Terrain';
 import { WheatField } from './WheatField';
 import { WeatherSystem } from './WeatherSystem';
 import { QuizMarker } from './QuizMarker';
 import { IrrigationEffect } from './IrrigationEffect';
+import { Environment } from './Environment';
 import { useFarmGame } from '@/lib/stores/useFarmGame';
 import * as THREE from 'three';
 
@@ -30,25 +31,30 @@ export const FarmScene: React.FC = () => {
           shadow-camera-bottom={-50}
         />
         
-        {/* Camera */}
+        {/* Camera - positioned to show the expanded world */}
         <PerspectiveCamera
           makeDefault
-          position={[50, 40, 50]}
-          fov={45}
+          position={[70, 60, 70]}
+          fov={50}
         />
         
-        {/* Controls */}
+        {/* Controls - allow viewing the larger world but focused on farm */}
         <OrbitControls
           target={[0, 0, 0]}
           enablePan={true}
           enableZoom={true}
           enableRotate={true}
-          minDistance={20}
-          maxDistance={100}
+          minDistance={30}
+          maxDistance={200}
           maxPolarAngle={Math.PI / 2.2}
+          panSpeed={0.5}
         />
         
+        {/* Fog for depth perception */}
+        <fog attach="fog" args={['#E6F3FF', 100, 300]} />
+        
         {/* Scene objects */}
+        <Environment />
         <Terrain />
         <WheatField />
         
@@ -58,8 +64,8 @@ export const FarmScene: React.FC = () => {
         {/* Irrigation effect when irrigating */}
         <IrrigationEffect active={stage1Decision === 'irrigate' && cropStage === 'planting'} />
         
-        {/* Grid helper for reference */}
-        <gridHelper args={[100, 20, '#444444', '#666666']} position={[0, 0.01, 0]} />
+        {/* Farm area grid helper */}
+        <gridHelper args={[70, 14, '#FFD700', '#FFA500']} position={[0, 0.01, 0]} />
       </Suspense>
     </Canvas>
   );
