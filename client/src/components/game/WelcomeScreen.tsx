@@ -78,15 +78,17 @@ export const WelcomeScreen: React.FC = () => {
             
             <Select value={selectedRegion} onValueChange={handleRegionChange} disabled={isLoadingData}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder={isLoadingData ? "Loading real NASA data..." : "-- Select Region --"} />
+                <SelectValue placeholder={isLoadingData ? "Loading real NASA data..." : "-- Select District in Rajshahi --"} />
               </SelectTrigger>
               <SelectContent className="bg-white">
-                <SelectItem value="rajshahi-bangladesh">🇧🇩 Rajshahi, Bangladesh (Real NASA Data ✨)</SelectItem>
-                <SelectItem value="iowa-usa">Iowa, USA (Corn Belt)</SelectItem>
-                <SelectItem value="punjab-india">Punjab, India (Wheat Belt)</SelectItem>
-                <SelectItem value="saopaulo-brazil">São Paulo, Brazil (Soybean Region)</SelectItem>
-                <SelectItem value="kenya-africa">Central Kenya (Smallholder Farm)</SelectItem>
-                <SelectItem value="custom">🌍 Enter Custom Location</SelectItem>
+                <SelectItem value="bogra">🌾 Bogra District</SelectItem>
+                <SelectItem value="joypurhat">🌾 Joypurhat District</SelectItem>
+                <SelectItem value="naogaon">🌾 Naogaon District</SelectItem>
+                <SelectItem value="natore">🌾 Natore District</SelectItem>
+                <SelectItem value="nawabganj">🌾 Nawabganj District</SelectItem>
+                <SelectItem value="pabna">🌾 Pabna District</SelectItem>
+                <SelectItem value="rajshahi">🌾 Rajshahi District (Main)</SelectItem>
+                <SelectItem value="sirajganj">🌾 Sirajganj District</SelectItem>
               </SelectContent>
             </Select>
             

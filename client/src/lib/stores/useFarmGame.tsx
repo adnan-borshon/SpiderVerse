@@ -79,7 +79,7 @@ interface FarmGameState {
   floodOccurred: boolean;
   
   // Weather state
-  weatherCondition: 'sunny' | 'cloudy' | 'rainy';
+  weatherCondition: 'sunny' | 'cloudy' | 'rainy' | 'heatwave';
   
   // Actions
   setPhase: (phase: GamePhase) => void;
@@ -244,10 +244,10 @@ export const useFarmGame = create<FarmGameState>((set, get) => ({
           heat: improvedHeatFactor
         },
         cropStage: 'growing',
-        weatherCondition: 'rainy'
+        weatherCondition: 'sunny' // Keep sunny since irrigation happened
       });
     } else {
-      // Accept heat stress
+      // Accept heat stress - show heatwave
       const heatFactor = Math.max(0.2, 1 - 0.05 * (lstAnomaly - 0.5));
       
       set({
@@ -256,7 +256,7 @@ export const useFarmGame = create<FarmGameState>((set, get) => ({
           heat: heatFactor
         },
         cropStage: 'growing',
-        weatherCondition: 'sunny'
+        weatherCondition: 'heatwave' // Show heatwave when accepting heat stress
       });
     }
   },

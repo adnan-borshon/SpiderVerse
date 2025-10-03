@@ -8,6 +8,7 @@ export const WeatherSystem: React.FC = () => {
   const { weatherCondition } = useFarmGame();
   const rainRef = useRef<THREE.Points>(null);
   const sunRef = useRef<THREE.Mesh>(null);
+  const heatWaveRef = useRef<THREE.Points>(null);
   
   // Generate more rain particles for better visibility
   const rainParticles = useMemo(() => {
@@ -20,7 +21,18 @@ export const WeatherSystem: React.FC = () => {
     return positions;
   }, []);
   
-  // Animate rain falling and sun glow
+  // Generate heat wave shimmer particles
+  const heatWaveParticles = useMemo(() => {
+    const positions = new Float32Array(1000 * 3);
+    for (let i = 0; i < 1000; i++) {
+      positions[i * 3] = (Math.random() - 0.5) * 100;
+      positions[i * 3 + 1] = Math.random() * 10 + 0.5; // Near ground level
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 100;
+    }
+    return positions;
+  }, []);
+  
+  // Animate weather effects
   useFrame((state) => {
     if (rainRef.current && weatherCondition === 'rainy') {
       const positions = rainRef.current.geometry.attributes.position.array as Float32Array;
@@ -37,10 +49,29 @@ export const WeatherSystem: React.FC = () => {
       rainRef.current.geometry.attributes.position.needsUpdate = true;
     }
     
-    // Animate sun glow
-    if (sunRef.current && weatherCondition === 'sunny') {
-      const pulseScale = 1 + Math.sin(state.clock.elapsedTime * 0.5) * 0.05;
+    // Animate sun glow for normal and heatwave
+    if (sunRef.current && (weatherCondition === 'sunny' || weatherCondition === 'heatwave')) {
+      const intensity = weatherCondition === 'heatwave' ? 0.15 : 0.05;
+      const pulseScale = 1 + Math.sin(state.clock.elapsedTime * 0.5) * intensity;
       sunRef.current.scale.set(pulseScale, pulseScale, pulseScale);
+    }
+    
+    // Animate heat wave shimmer
+    if (heatWaveRef.current && weatherCondition === 'heatwave') {
+      const positions = heatWaveRef.current.geometry.attributes.position.array as Float32Array;
+      
+      for (let i = 0; i < positions.length; i += 3) {
+        // Create rising heat shimmer effect
+        positions[i + 1] += 0.05;
+        positions[i] += Math.sin(state.clock.elapsedTime + i) * 0.02;
+        
+        // Reset particle when it rises too high
+        if (positions[i + 1] > 10) {
+          positions[i + 1] = 0.5;
+        }
+      }
+      
+      heatWaveRef.current.geometry.attributes.position.needsUpdate = true;
     }
   });
   
@@ -50,34 +81,45 @@ export const WeatherSystem: React.FC = () => {
       <color
         attach="background"
         args={[
+          weatherCondition === 'heatwave' ? '#FFA366' : // Orange-reddish for heatwave
           weatherCondition === 'sunny' ? '#87CEEB' :
           weatherCondition === 'cloudy' ? '#B0C4DE' :
           '#708090'
         ]}
       />
       
-      {/* Sun with rays */}
-      {weatherCondition === 'sunny' && (
+      {/* Sun with rays - shows for sunny and heatwave */}
+      {(weatherCondition === 'sunny' || weatherCondition === 'heatwave') && (
         <group position={[40, 40, -40]}>
-          {/* Sun core */}
+          {/* Sun core - more intense for heatwave */}
           <mesh ref={sunRef}>
-            <sphereGeometry args={[5, 32, 32]} />
-            <meshBasicMaterial color="#FDB813" />
+            <sphereGeometry args={[weatherCondition === 'heatwave' ? 7 : 5, 32, 32]} />
+            <meshBasicMaterial color={weatherCondition === 'heatwave' ? "#FF6B35" : "#FDB813"} />
           </mesh>
-          {/* Sun glow */}
+          {/* Sun glow - larger and more intense for heatwave */}
           <mesh>
-            <sphereGeometry args={[6.5, 32, 32]} />
-            <meshBasicMaterial color="#FFD700" transparent opacity={0.3} />
+            <sphereGeometry args={[weatherCondition === 'heatwave' ? 10 : 6.5, 32, 32]} />
+            <meshBasicMaterial 
+              color={weatherCondition === 'heatwave' ? "#FF8C42" : "#FFD700"} 
+              transparent 
+              opacity={weatherCondition === 'heatwave' ? 0.5 : 0.3} 
+            />
           </mesh>
-          {/* Sun rays */}
-          {Array.from({ length: 12 }).map((_, i) => {
-            const angle = (i / 12) * Math.PI * 2;
-            const x = Math.cos(angle) * 8;
-            const y = Math.sin(angle) * 8;
+          {/* Sun rays - more prominent during heatwave */}
+          {Array.from({ length: weatherCondition === 'heatwave' ? 16 : 12 }).map((_, i) => {
+            const rayCount = weatherCondition === 'heatwave' ? 16 : 12;
+            const angle = (i / rayCount) * Math.PI * 2;
+            const distance = weatherCondition === 'heatwave' ? 12 : 8;
+            const x = Math.cos(angle) * distance;
+            const y = Math.sin(angle) * distance;
             return (
               <mesh key={i} position={[x, y, 0]} rotation={[0, 0, angle]}>
-                <coneGeometry args={[0.5, 4, 4]} />
-                <meshBasicMaterial color="#FFD700" transparent opacity={0.6} />
+                <coneGeometry args={[weatherCondition === 'heatwave' ? 0.8 : 0.5, weatherCondition === 'heatwave' ? 6 : 4, 4]} />
+                <meshBasicMaterial 
+                  color={weatherCondition === 'heatwave' ? "#FF8C42" : "#FFD700"} 
+                  transparent 
+                  opacity={weatherCondition === 'heatwave' ? 0.8 : 0.6} 
+                />
               </mesh>
             );
           })}
@@ -122,6 +164,28 @@ export const WeatherSystem: React.FC = () => {
             transparent
             opacity={0.8}
             sizeAttenuation
+          />
+        </points>
+      )}
+      
+      {/* Heat wave shimmer particles */}
+      {weatherCondition === 'heatwave' && (
+        <points ref={heatWaveRef}>
+          <bufferGeometry>
+            <bufferAttribute
+              attach="attributes-position"
+              count={heatWaveParticles.length / 3}
+              array={heatWaveParticles}
+              itemSize={3}
+            />
+          </bufferGeometry>
+          <pointsMaterial
+            size={0.3}
+            color="#FFAA00"
+            transparent
+            opacity={0.4}
+            sizeAttenuation
+            blending={THREE.AdditiveBlending}
           />
         </points>
       )}

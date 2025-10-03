@@ -1,57 +1,78 @@
 // Game constants and location data
 
+// Rajshahi Division Districts
 export const LOCATIONS = {
-  'rajshahi-bangladesh': {
-    name: 'Rajshahi, Bangladesh',
+  'bogra': {
+    name: 'Bogra',
+    division: 'Rajshahi',
+    coordinates: { lat: 24.8481, lon: 89.3730 },
+    country: 'Bangladesh',
+    climate: 'Subtropical monsoon',
+    mainCrop: 'Wheat/Rice',
+    useRealData: true
+  },
+  'joypurhat': {
+    name: 'Joypurhat',
+    division: 'Rajshahi',
+    coordinates: { lat: 25.0968, lon: 89.0227 },
+    country: 'Bangladesh',
+    climate: 'Subtropical monsoon',
+    mainCrop: 'Wheat/Rice',
+    useRealData: true
+  },
+  'naogaon': {
+    name: 'Naogaon',
+    division: 'Rajshahi',
+    coordinates: { lat: 24.7936, lon: 88.9318 },
+    country: 'Bangladesh',
+    climate: 'Subtropical monsoon',
+    mainCrop: 'Wheat/Rice',
+    useRealData: true
+  },
+  'natore': {
+    name: 'Natore',
+    division: 'Rajshahi',
+    coordinates: { lat: 24.4206, lon: 89.0000 },
+    country: 'Bangladesh',
+    climate: 'Subtropical monsoon',
+    mainCrop: 'Wheat/Rice',
+    useRealData: true
+  },
+  'nawabganj': {
+    name: 'Nawabganj',
+    division: 'Rajshahi',
+    coordinates: { lat: 24.5965, lon: 88.2775 },
+    country: 'Bangladesh',
+    climate: 'Subtropical monsoon',
+    mainCrop: 'Wheat/Rice',
+    useRealData: true
+  },
+  'pabna': {
+    name: 'Pabna',
+    division: 'Rajshahi',
+    coordinates: { lat: 24.0064, lon: 89.2372 },
+    country: 'Bangladesh',
+    climate: 'Subtropical monsoon',
+    mainCrop: 'Wheat/Rice',
+    useRealData: true
+  },
+  'rajshahi': {
+    name: 'Rajshahi',
+    division: 'Rajshahi',
     coordinates: { lat: 24.3745, lon: 88.6042 },
     country: 'Bangladesh',
     climate: 'Subtropical monsoon',
     mainCrop: 'Wheat',
-    useRealData: true // Flag to load real NASA datasets
+    useRealData: true
   },
-  'iowa-usa': {
-    name: 'Iowa, USA',
-    coordinates: { lat: 42.0, lon: -93.5 },
-    country: 'USA',
-    climate: 'temperate',
-    mainCrop: 'wheat/corn',
-    smapAnomaly: -0.3,
-    modisLST: 2.5,
-    floodRisk: 0.6,
-    ndvi: 0.75
-  },
-  'punjab-india': {
-    name: 'Punjab, India',
-    coordinates: { lat: 30.9, lon: 75.8 },
-    country: 'India',
-    climate: 'monsoon-dependent',
-    mainCrop: 'wheat/rice',
-    smapAnomaly: -0.4,
-    modisLST: 3.0,
-    floodRisk: 0.7,
-    ndvi: 0.70
-  },
-  'saopaulo-brazil': {
-    name: 'São Paulo, Brazil',
-    coordinates: { lat: -23.5, lon: -46.6 },
-    country: 'Brazil',
-    climate: 'tropical',
-    mainCrop: 'soy/sugarcane',
-    smapAnomaly: -0.2,
-    modisLST: 2.0,
-    floodRisk: 0.5,
-    ndvi: 0.80
-  },
-  'kenya-africa': {
-    name: 'Central Kenya',
-    coordinates: { lat: -0.3, lon: 36.8 },
-    country: 'Kenya',
-    climate: 'semi-arid',
-    mainCrop: 'maize/wheat',
-    smapAnomaly: -0.5,
-    modisLST: 3.5,
-    floodRisk: 0.4,
-    ndvi: 0.65
+  'sirajganj': {
+    name: 'Sirajganj',
+    division: 'Rajshahi',
+    coordinates: { lat: 24.4533, lon: 89.7006 },
+    country: 'Bangladesh',
+    climate: 'Subtropical monsoon',
+    mainCrop: 'Wheat/Jute',
+    useRealData: true
   }
 };
 
