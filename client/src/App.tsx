@@ -92,9 +92,7 @@ function App() {
             <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 pointer-events-auto">
               <button
                 onClick={() => {
-                  // Reset quiz counters for Stage 2
-                  const { resetGame, ...gameState } = useFarmGame.getState();
-                  useFarmGame.setState({ questionsAnswered: 0, quizScore: 0 });
+                  // Don't reset questionsAnswered - we need cumulative count for stage progression
                   setPhase('stage2');
                   setStage2Ready(false);
                 }}
@@ -139,8 +137,7 @@ function App() {
                 <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 pointer-events-auto">
                   <button
                     onClick={() => {
-                      // Reset quiz counters for Stage 3
-                      useFarmGame.setState({ questionsAnswered: 0, quizScore: 0 });
+                      // Don't reset questionsAnswered - we need cumulative count for stage progression
                       setPhase('stage3');
                       setStage3Ready(false);
                     }}
