@@ -48,17 +48,11 @@ export const Quiz: React.FC = () => {
   const handleNext = () => {
     // Check if there's a next question
     if (currentQuestion + 1 >= questions.length) {
-      // Quiz completed - close it and advance to next phase
+      // Quiz completed - close it
       setQuizActive(false);
       
-      // Advance to the next stage after quiz completion
-      if (phase === 'stage1') {
-        setPhase('stage2');
-      } else if (phase === 'stage2') {
-        setPhase('stage3');
-      } else if (phase === 'stage3') {
-        setPhase('results');
-      }
+      // Don't advance phases here - let App.tsx handle it via the buttons
+      // This ensures proper counter reset and state management
     } else {
       setCurrentQuestion(currentQuestion + 1);
       setSelectedAnswer(null);
