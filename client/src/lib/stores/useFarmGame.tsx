@@ -81,6 +81,11 @@ interface FarmGameState {
   // Weather state
   weatherCondition: 'sunny' | 'cloudy' | 'rainy' | 'heatwave';
   
+  // Days passed modal
+  daysPassed: number;
+  daysPassedMessage: string;
+  showDaysPassedModal: boolean;
+  
   // Actions
   setPhase: (phase: GamePhase) => void;
   setLocation: (location: Location) => void;
@@ -97,6 +102,7 @@ interface FarmGameState {
   answerQuizQuestion: (correct: boolean) => void;
   setCropStage: (stage: FarmGameState['cropStage']) => void;
   setWeatherCondition: (condition: FarmGameState['weatherCondition']) => void;
+  setShowDaysPassedModal: (show: boolean) => void;
   resetGame: () => void;
 }
 
@@ -142,6 +148,9 @@ export const useFarmGame = create<FarmGameState>((set, get) => ({
   pricePerBushel: 6.5,
   day: 100,
   floodOccurred: false,
+  daysPassed: 0,
+  daysPassedMessage: '',
+  showDaysPassedModal: false,
   
   setPhase: (phase) => {
     const currentStage = phase === 'stage1' ? 1 : 
@@ -192,7 +201,7 @@ export const useFarmGame = create<FarmGameState>((set, get) => ({
     const { stage1Decision, nasaData } = get();
     
     if (stage1Decision === 'noIrrigate') {
-      // Poor germination due to dry conditions
+      // Poor germination due to dry conditions - takes longer
       const germinationRate = 0.70;
       const droughtFactor = Math.max(0.3, 1 + 0.8 * nasaData.smapAnomaly);
       
@@ -204,10 +213,13 @@ export const useFarmGame = create<FarmGameState>((set, get) => ({
         },
         germinationRate,
         cropStage: 'germinating',
-        weatherCondition: 'sunny'
+        weatherCondition: 'sunny',
+        daysPassed: 14,
+        daysPassedMessage: 'Seeds took longer to germinate in dry soil. Consider irrigation next time for faster growth.',
+        showDaysPassedModal: true
       });
     } else {
-      // Good germination with irrigation
+      // Good germination with irrigation - faster
       const germinationRate = 0.95;
       
       set({
@@ -220,7 +232,10 @@ export const useFarmGame = create<FarmGameState>((set, get) => ({
         },
         germinationRate,
         cropStage: 'germinating',
-        weatherCondition: 'sunny' // Keep sunny - irrigation effect will show water
+        weatherCondition: 'sunny', // Keep sunny - irrigation effect will show water
+        daysPassed: 7,
+        daysPassedMessage: 'Irrigation helped seeds germinate quickly with excellent rates. Your crop is off to a strong start!',
+        showDaysPassedModal: true
       });
     }
   },
@@ -267,7 +282,7 @@ export const useFarmGame = create<FarmGameState>((set, get) => ({
     const { stage3Decision } = get();
     
     if (stage3Decision === 'harvestEarly') {
-      // Early harvest path
+      // Early harvest path - immediate harvest
       set({
         potentialYield: get().potentialYield * 0.85,
         multipliers: {
@@ -278,10 +293,13 @@ export const useFarmGame = create<FarmGameState>((set, get) => ({
         day: get().day + 1,
         cropStage: 'harvested',
         weatherCondition: 'sunny',
-        floodOccurred: false
+        floodOccurred: false,
+        daysPassed: 0,
+        daysPassedMessage: 'Immediate harvest avoided flood risk but reduced yield. Smart decision to minimize losses!',
+        showDaysPassedModal: true
       });
     } else if (stage3Decision === 'waitForRipeness') {
-      // Wait for maturity path
+      // Wait for maturity path - 10 days
       const floodOccurs = Math.random() < 0.60;
       
       set({
@@ -294,7 +312,12 @@ export const useFarmGame = create<FarmGameState>((set, get) => ({
           flood: floodOccurs ? 0.46 : 1.0
         },
         cropStage: floodOccurs ? 'harvested' : 'mature',
-        weatherCondition: floodOccurs ? 'rainy' : 'sunny'
+        weatherCondition: floodOccurs ? 'rainy' : 'sunny',
+        daysPassed: 10,
+        daysPassedMessage: floodOccurs 
+          ? 'Waited 10 days for full ripeness, but flood struck! Major yield losses occurred.'
+          : 'Waited 10 days and achieved full ripeness with maximum yield. Great timing!',
+        showDaysPassedModal: true
       });
     }
   },
@@ -318,6 +341,8 @@ export const useFarmGame = create<FarmGameState>((set, get) => ({
   setCropStage: (stage) => set({ cropStage: stage }),
   
   setWeatherCondition: (condition) => set({ weatherCondition: condition }),
+  
+  setShowDaysPassedModal: (show) => set({ showDaysPassedModal: show }),
   
   resetGame: () => set({
     phase: 'welcome',

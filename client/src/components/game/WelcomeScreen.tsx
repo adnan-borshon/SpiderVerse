@@ -31,7 +31,9 @@ export const WelcomeScreen: React.FC = () => {
           setIsLoadingData(true);
           try {
             await loadRajshahiData();
-            console.log('✅ Real Rajshahi data loaded successfully');
+            // Set the selected district location after loading NASA data
+            setLocation(location);
+            console.log('✅ Real Rajshahi data loaded successfully for', location.name);
           } catch (error) {
             console.error('❌ Error loading real data:', error);
           } finally {

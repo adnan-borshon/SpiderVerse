@@ -13,9 +13,19 @@ import { Quiz } from "@/components/game/Quiz";
 import { GameHUD } from "@/components/game/GameHUD";
 import { SoundManager } from "@/components/game/SoundManager";
 import { FinalResults } from "@/components/game/FinalResults";
+import { DaysPassedModal } from "@/components/game/DaysPassedModal";
 
 function App() {
-  const { phase, quizActive, questionsAnswered, setPhase } = useFarmGame();
+  const { 
+    phase, 
+    quizActive, 
+    questionsAnswered, 
+    setPhase,
+    showDaysPassedModal,
+    daysPassed,
+    daysPassedMessage,
+    setShowDaysPassedModal
+  } = useFarmGame();
   const [showTransition, setShowTransition] = useState(false);
   const [stage2Ready, setStage2Ready] = useState(false);
   const [stage3Ready, setStage3Ready] = useState(false);
@@ -36,14 +46,14 @@ function App() {
   
   // Auto-advance to Stage 3 after Stage 2 quiz complete
   useEffect(() => {
-    if (phase === 'stage2' && !quizActive && questionsAnswered >= 3) {
+    if (phase === 'stage2' && !quizActive && questionsAnswered >= 6) {
       setStage3Ready(true);
     }
   }, [phase, quizActive, questionsAnswered]);
   
   // Auto-advance to Results after Stage 3 quiz complete
   useEffect(() => {
-    if (phase === 'stage3' && !quizActive && questionsAnswered >= 3) {
+    if (phase === 'stage3' && !quizActive && questionsAnswered >= 9) {
       setTimeout(() => {
         setPhase('results');
       }, 2000);
@@ -165,6 +175,15 @@ function App() {
       
       {/* Final Results */}
       {phase === 'results' && <FinalResults />}
+      
+      {/* Days Passed Modal - shown after decisions */}
+      {showDaysPassedModal && (
+        <DaysPassedModal
+          daysPassed={daysPassed}
+          message={daysPassedMessage}
+          onClose={() => setShowDaysPassedModal(false)}
+        />
+      )}
     </div>
   );
 }
