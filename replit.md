@@ -64,6 +64,14 @@ Preferred communication style: Simple, everyday language.
 ### External Dependencies
 
 **NASA Data Integration:**
+- **Real Dataset Integration for Rajshahi, Bangladesh:**
+  - Actual soil moisture data from SMAP satellite (485 records analyzed)
+  - Real temperature data from MODIS LST (237 records)
+  - Vegetation health data from NDVI measurements (63 records)
+  - Data processed using CSV files from NASA Earth Observation datasets
+  - Backend service (`rajshahiDataService.ts`) analyzes real CSV data
+  - API endpoint `/api/nasa-data/rajshahi` serves processed real-time data
+  - Thresholds based on wheat crop requirements (soil moisture, temperature, NDVI)
 - NASA Worldview for satellite imagery visualization
 - CropCASMA for crop condition monitoring
 - Giovanni for data analysis and visualization
@@ -96,7 +104,56 @@ Preferred communication style: Simple, everyday language.
 - Custom Vite logger with process exit on errors
 
 **Key Game Constants:**
-- Pre-configured farming locations (Iowa USA, Punjab India, São Paulo Brazil, Central Kenya)
+- Pre-configured farming locations (Rajshahi Bangladesh with real data, Iowa USA, Punjab India, São Paulo Brazil, Central Kenya)
 - Each location includes coordinates, climate data, and NASA data parameters
 - Quiz questions for educational assessment
 - Tooltip definitions for UI guidance
+
+## Real Data Integration (Rajshahi, Bangladesh)
+
+**Data Sources:**
+- Location: Rajshahi Division, Bangladesh (24.3745°N, 88.6042°E)
+- Datasets stored in: `server/data/Rajshahi/`
+- Processing logic based on Python notebook: `attached_assets/data_1759511411271.ipynb`
+
+**Dataset Files:**
+1. **Soil Moisture (SMAP):**
+   - `geographic-soil-moisture-Statistics.csv` (485 records)
+   - `geographic soil moisture flag statistic.csv` (quality flags)
+   - `geographic-Soil-Moisture-Retrieval-Data-AM-retrieval-qual-flag-lookup.csv` (quality lookup)
+   - Thresholds: Optimal (>0.30), Good (0.25-0.30), Moderate (0.20-0.25), High Stress (0.15-0.20), Critical (<0.15)
+
+2. **Temperature (MODIS LST):**
+   - `temperature-Statistics.csv` (237 records in Kelvin)
+   - `temperature-QC-Day-Statistics-QA.csv` (quality control)
+   - `temperature-QC-Day-lookup.csv` (quality lookup)
+   - Thresholds: Optimal (<20°C), Good (20-25°C), Moderate (25-30°C), High Stress (30-35°C), Critical (>35°C)
+
+3. **Vegetation (NDVI):**
+   - `vegetation-Statistics.csv` (63 records)
+   - `vegetation-250m-16-days-VI-Quality-Statistics-QA.csv` (quality control)
+   - `vegetation-250m-16-days-VI-Quality-lookup.csv` (quality lookup)
+   - Thresholds: Excellent (>0.65), Good (0.50-0.65), Moderate (0.35-0.50), Poor (<0.35)
+
+4. **Land Cover:**
+   - `land_cover-LC-Type1-Statistics.csv`
+   - `land_cover-QC-lookup.csv` and `land_cover-QC-Statistics-QA.csv`
+
+**Data Processing:**
+- Backend service: `server/services/rajshahiDataService.ts`
+- Uses Papa Parse for CSV processing
+- Implements quality categorization based on flag codes
+- Calculates averages and determines crop stress levels
+- Returns formatted data matching game's NASA data structure
+
+**API Endpoints:**
+- `GET /api/nasa-data/rajshahi` - Returns processed Rajshahi data
+  - Response includes: location info, nasaData (smapAnomaly, modisLST, ndvi, floodRisk), detailed analysis
+
+**Game Integration:**
+- Welcome screen shows "Rajshahi, Bangladesh (Real NASA Data ✨)" option
+- When selected, frontend calls `loadRajshahiData()` from game store
+- Real data replaces mock values for game decisions
+- Stage 1: Uses real soil moisture for germination decisions
+- Stage 2: Uses real temperature for heat stress management
+- Stage 3: Uses vegetation health data for crop monitoring
