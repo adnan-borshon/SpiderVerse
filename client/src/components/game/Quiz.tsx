@@ -12,24 +12,20 @@ export const Quiz: React.FC = () => {
                    phase === 'stage2' ? STAGE2_QUIZ_QUESTIONS : QUIZ_QUESTIONS;
   
   // Calculate the correct question index for the current stage
+  // For each stage, we track questions within that stage only (0-2)
   const getStageQuestionIndex = () => {
-    if (phase === 'stage1') {
-      return Math.min(questionsAnswered, questions.length - 1); // 0-2
-    }
-    if (phase === 'stage2') {
-      const stageIndex = questionsAnswered - 3; // 3-5 becomes 0-2
-      return Math.min(Math.max(0, stageIndex), questions.length - 1);
-    }
-    if (phase === 'stage3') {
-      const stageIndex = questionsAnswered - 6; // 6-8 becomes 0-2  
-      return Math.min(Math.max(0, stageIndex), questions.length - 1);
-    }
-    return 0;
+    let stageOffset = 0;
+    if (phase === 'stage2') stageOffset = 3;
+    if (phase === 'stage3') stageOffset = 6;
+    
+    // Questions answered within this stage
+    const questionsInStage = questionsAnswered - stageOffset;
+    
+    // Ensure we stay within bounds (0 to questions.length - 1)
+    return Math.max(0, Math.min(questionsInStage, questions.length - 1));
   };
   
-  // Initialize currentQuestion based on phase
-  const initialQuestionIndex = getStageQuestionIndex();
-  const [currentQuestion, setCurrentQuestion] = useState(initialQuestionIndex);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
@@ -38,14 +34,11 @@ export const Quiz: React.FC = () => {
   useEffect(() => {
     if (quizActive) {
       const stageQuestionIndex = getStageQuestionIndex();
-      // Only update if different to avoid unnecessary re-renders
-      if (currentQuestion !== stageQuestionIndex) {
-        setCurrentQuestion(stageQuestionIndex);
-      }
+      setCurrentQuestion(stageQuestionIndex);
       setSelectedAnswer(null);
       setShowExplanation(false);
     }
-  }, [quizActive, phase, questionsAnswered]);
+  }, [quizActive, phase]); // Only depend on quizActive and phase, not questionsAnswered
   
   if (!quizActive) return null;
   
@@ -103,7 +96,11 @@ export const Quiz: React.FC = () => {
               {question.options.map((option, index) => (
                 <button
                   key={index}
-                  onClick={() => !showExplanation && handleAnswer(index)}
+                  onClick={() => {
+                    if (!showExplanation) {
+                      handleAnswer(index);
+                    }
+                  }}
                   disabled={showExplanation}
                   className={`w-full p-3 rounded-lg text-left transition-all border-2 ${
                     showExplanation
@@ -112,7 +109,7 @@ export const Quiz: React.FC = () => {
                         : selectedAnswer === index
                         ? 'border-red-500 bg-red-500/30'
                         : 'border-gray-600 bg-gray-800/30'
-                      : 'border-gray-600 bg-gray-800/30 hover:border-gray-500'
+                      : 'border-gray-600 bg-gray-800/30 hover:border-gray-500 cursor-pointer'
                   }`}
                 >
                   <div className="flex items-center gap-2">
@@ -143,7 +140,7 @@ export const Quiz: React.FC = () => {
           <div className="flex gap-3">
             {showExplanation && (
               <Button className="w-full" onClick={handleNext}>
-                {questionsAnswered >= questions.length - 1 ? 'Continue to Farm' : 'Next Question'}
+                {currentQuestion >= questions.length - 1 ? 'Continue to Farm' : 'Next Question'}
               </Button>
             )}
           </div>
