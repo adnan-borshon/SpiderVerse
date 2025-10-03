@@ -10,7 +10,26 @@ export const Quiz: React.FC = () => {
   // Select appropriate quiz questions based on phase
   const questions = phase === 'stage3' ? STAGE3_QUIZ_QUESTIONS : 
                    phase === 'stage2' ? STAGE2_QUIZ_QUESTIONS : QUIZ_QUESTIONS;
-  const [currentQuestion, setCurrentQuestion] = useState(0);
+  
+  // Calculate the correct question index for the current stage
+  const getStageQuestionIndex = () => {
+    if (phase === 'stage1') {
+      return Math.min(questionsAnswered, questions.length - 1); // 0-2
+    }
+    if (phase === 'stage2') {
+      const stageIndex = questionsAnswered - 3; // 3-5 becomes 0-2
+      return Math.min(Math.max(0, stageIndex), questions.length - 1);
+    }
+    if (phase === 'stage3') {
+      const stageIndex = questionsAnswered - 6; // 6-8 becomes 0-2  
+      return Math.min(Math.max(0, stageIndex), questions.length - 1);
+    }
+    return 0;
+  };
+  
+  // Initialize currentQuestion based on phase
+  const initialQuestionIndex = getStageQuestionIndex();
+  const [currentQuestion, setCurrentQuestion] = useState(initialQuestionIndex);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
@@ -18,19 +37,24 @@ export const Quiz: React.FC = () => {
   // Reset quiz UI when quiz becomes active or when switching stages
   useEffect(() => {
     if (quizActive) {
-      setCurrentQuestion(questionsAnswered);
+      const stageQuestionIndex = getStageQuestionIndex();
+      // Only update if different to avoid unnecessary re-renders
+      if (currentQuestion !== stageQuestionIndex) {
+        setCurrentQuestion(stageQuestionIndex);
+      }
       setSelectedAnswer(null);
       setShowExplanation(false);
     }
-  }, [quizActive]);
+  }, [quizActive, phase, questionsAnswered]);
   
   if (!quizActive) return null;
   
   const question = questions[currentQuestion];
   
-  // Safety check - if question doesn't exist, close quiz
+  // If no valid question exists, don't render anything
   if (!question) {
-    setQuizActive(false);
+    // Schedule closing the quiz in the next tick to avoid render-phase setState
+    setTimeout(() => setQuizActive(false), 0);
     return null;
   }
   
