@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export const Quiz: React.FC = () => {
-  const { quizActive, setQuizActive, answerQuizQuestion, questionsAnswered, phase } = useFarmGame();
+  const { quizActive, setQuizActive, answerQuizQuestion, questionsAnswered, phase, setPhase } = useFarmGame();
   
   // Select appropriate quiz questions based on phase
   const questions = phase === 'stage3' ? STAGE3_QUIZ_QUESTIONS : 
@@ -48,7 +48,17 @@ export const Quiz: React.FC = () => {
   const handleNext = () => {
     // Check if there's a next question
     if (currentQuestion + 1 >= questions.length) {
+      // Quiz completed - close it and advance to next phase
       setQuizActive(false);
+      
+      // Advance to the next stage after quiz completion
+      if (phase === 'stage1') {
+        setPhase('stage2');
+      } else if (phase === 'stage2') {
+        setPhase('stage3');
+      } else if (phase === 'stage3') {
+        setPhase('results');
+      }
     } else {
       setCurrentQuestion(currentQuestion + 1);
       setSelectedAnswer(null);
