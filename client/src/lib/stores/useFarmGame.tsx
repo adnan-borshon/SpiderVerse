@@ -220,7 +220,7 @@ export const useFarmGame = create<FarmGameState>((set, get) => ({
         },
         germinationRate,
         cropStage: 'germinating',
-        weatherCondition: 'rainy'
+        weatherCondition: 'sunny' // Keep sunny - irrigation effect will show water
       });
     }
   },

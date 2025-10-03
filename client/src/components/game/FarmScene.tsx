@@ -1,6 +1,6 @@
 import React, { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Fog } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { Terrain } from './Terrain';
 import { WheatField } from './WheatField';
 import { WeatherSystem } from './WeatherSystem';

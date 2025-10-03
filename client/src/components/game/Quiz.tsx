@@ -27,6 +27,13 @@ export const Quiz: React.FC = () => {
   if (!quizActive) return null;
   
   const question = questions[currentQuestion];
+  
+  // Safety check - if question doesn't exist, close quiz
+  if (!question) {
+    setQuizActive(false);
+    return null;
+  }
+  
   const quizTitle = phase === 'stage3' ? 'Flood Forecasting Knowledge Check' :
                    phase === 'stage2' ? 'MODIS & NDVI Knowledge Check' : 'SMAP Knowledge Check';
   
