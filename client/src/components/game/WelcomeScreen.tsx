@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export const WelcomeScreen: React.FC = () => {
-  const { setLocation, setPhase } = useFarmGame();
+  const { setLocation, setPhase, loadRajshahiData } = useFarmGame();
   const [selectedRegion, setSelectedRegion] = useState<string>('');
   const [customLocation, setCustomLocation] = useState({
     name: '',
@@ -15,15 +15,31 @@ export const WelcomeScreen: React.FC = () => {
     lon: 0
   });
   const [showCustom, setShowCustom] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(false);
 
-  const handleRegionChange = (value: string) => {
+  const handleRegionChange = async (value: string) => {
     setSelectedRegion(value);
     if (value === 'custom') {
       setShowCustom(true);
     } else {
       setShowCustom(false);
       if (value && LOCATIONS[value as keyof typeof LOCATIONS]) {
-        setLocation(LOCATIONS[value as keyof typeof LOCATIONS]);
+        const location = LOCATIONS[value as keyof typeof LOCATIONS];
+        
+        // Check if this location uses real data from datasets
+        if ('useRealData' in location && location.useRealData) {
+          setIsLoadingData(true);
+          try {
+            await loadRajshahiData();
+            console.log('✅ Real Rajshahi data loaded successfully');
+          } catch (error) {
+            console.error('❌ Error loading real data:', error);
+          } finally {
+            setIsLoadingData(false);
+          }
+        } else {
+          setLocation(location);
+        }
       }
     }
   };
@@ -60,11 +76,12 @@ export const WelcomeScreen: React.FC = () => {
               Choose your location to load real regional climate data
             </p>
             
-            <Select value={selectedRegion} onValueChange={handleRegionChange}>
+            <Select value={selectedRegion} onValueChange={handleRegionChange} disabled={isLoadingData}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="-- Select Region --" />
+                <SelectValue placeholder={isLoadingData ? "Loading real NASA data..." : "-- Select Region --"} />
               </SelectTrigger>
               <SelectContent className="bg-white">
+                <SelectItem value="rajshahi-bangladesh">🇧🇩 Rajshahi, Bangladesh (Real NASA Data ✨)</SelectItem>
                 <SelectItem value="iowa-usa">Iowa, USA (Corn Belt)</SelectItem>
                 <SelectItem value="punjab-india">Punjab, India (Wheat Belt)</SelectItem>
                 <SelectItem value="saopaulo-brazil">São Paulo, Brazil (Soybean Region)</SelectItem>
@@ -72,6 +89,12 @@ export const WelcomeScreen: React.FC = () => {
                 <SelectItem value="custom">🌍 Enter Custom Location</SelectItem>
               </SelectContent>
             </Select>
+            
+            {isLoadingData && (
+              <p className="text-sm text-blue-600 mt-2 animate-pulse">
+                📊 Loading real soil moisture, temperature, and vegetation data from Rajshahi...
+              </p>
+            )}
             
             {showCustom && (
               <div className="mt-4 space-y-3">

@@ -1,6 +1,14 @@
 // Game constants and location data
 
 export const LOCATIONS = {
+  'rajshahi-bangladesh': {
+    name: 'Rajshahi, Bangladesh',
+    coordinates: { lat: 24.3745, lon: 88.6042 },
+    country: 'Bangladesh',
+    climate: 'Subtropical monsoon',
+    mainCrop: 'Wheat',
+    useRealData: true // Flag to load real NASA datasets
+  },
   'iowa-usa': {
     name: 'Iowa, USA',
     coordinates: { lat: 42.0, lon: -93.5 },

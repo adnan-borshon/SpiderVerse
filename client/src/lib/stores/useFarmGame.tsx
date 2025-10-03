@@ -84,6 +84,7 @@ interface FarmGameState {
   // Actions
   setPhase: (phase: GamePhase) => void;
   setLocation: (location: Location) => void;
+  loadRajshahiData: () => Promise<void>;
   setStage1Decision: (decision: Stage1Decision) => void;
   processStage1Decision: () => void;
   setStage2Decision: (decision: Stage2Decision) => void;
@@ -151,18 +152,38 @@ export const useFarmGame = create<FarmGameState>((set, get) => ({
   },
   
   setLocation: (location) => {
-    // Update NASA data based on location
-    const nasaData = { ...initialNASAData };
-    
-    if (location.climate === 'monsoon-dependent') {
-      nasaData.smapAnomaly = -0.4;
-      nasaData.floodRisk = 0.7;
-    } else if (location.climate === 'semi-arid') {
-      nasaData.smapAnomaly = -0.5;
-      nasaData.modisLST = 3.5;
+    set({ location });
+  },
+
+  loadRajshahiData: async () => {
+    try {
+      const response = await fetch('/api/nasa-data/rajshahi');
+      if (!response.ok) {
+        throw new Error('Failed to fetch Rajshahi data');
+      }
+      
+      const data = await response.json();
+      
+      set({
+        location: data.location,
+        nasaData: data.nasaData
+      });
+      
+      console.log('✅ Loaded real Rajshahi data:', data);
+    } catch (error) {
+      console.error('❌ Error loading Rajshahi data:', error);
+      // Fallback to default values if fetch fails
+      set({
+        location: {
+          name: "Rajshahi",
+          country: "Bangladesh",
+          coordinates: { lat: 24.3745, lon: 88.6042 },
+          climate: "Subtropical monsoon",
+          mainCrop: "Wheat"
+        },
+        nasaData: initialNASAData
+      });
     }
-    
-    set({ location, nasaData });
   },
   
   setStage1Decision: (decision) => set({ stage1Decision: decision }),
