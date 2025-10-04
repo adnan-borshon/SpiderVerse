@@ -17,34 +17,27 @@ export const WelcomeScreen: React.FC = () => {
   const [showCustom, setShowCustom] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
 
-  const handleRegionChange = async (value: string) => {
-    setSelectedRegion(value);
-    if (value === 'custom') {
-      setShowCustom(true);
-    } else {
-      setShowCustom(false);
-      if (value && LOCATIONS[value as keyof typeof LOCATIONS]) {
-        const location = LOCATIONS[value as keyof typeof LOCATIONS];
-        
-        // Check if this location uses real data from datasets
-        if ('useRealData' in location && location.useRealData) {
-          setIsLoadingData(true);
-          try {
-            await loadDivisionData(location.name);
-            // Set the selected district location after loading NASA data
-            setLocation(location);
-            console.log('✅ Real Rajshahi data loaded successfully for', location.name);
-          } catch (error) {
-            console.error('❌ Error loading real data:', error);
-          } finally {
-            setIsLoadingData(false);
-          }
-        } else {
-          setLocation(location);
-        }
+const handleRegionChange = async (value: string) => {
+  console.log('Selected region:', value); // Debug log
+  setSelectedRegion(value);
+  if (value === 'custom') {
+    setShowCustom(true);
+  } else {
+    setShowCustom(false);
+    if (value) {
+      console.log('Calling loadDivisionData with:', value); // Debug log
+      setIsLoadingData(true);
+      try {
+        await loadDivisionData(value);
+        console.log(`✅ Real ${value} data loaded successfully`);
+      } catch (error) {
+        console.error('❌ Error loading real data:', error);
+      } finally {
+        setIsLoadingData(false);
       }
     }
-  };
+  }
+};
 
   const handleContinue = () => {
     if (showCustom) {
@@ -96,7 +89,7 @@ export const WelcomeScreen: React.FC = () => {
             
             {isLoadingData && (
               <p className="text-sm text-blue-600 mt-2 animate-pulse">
-                📊 Loading real soil moisture, temperature, and vegetation data from ${selectedRegion}...
+                📊 Loading real soil moisture, temperature, and vegetation data from {selectedRegion}...
               </p>
             )}
             

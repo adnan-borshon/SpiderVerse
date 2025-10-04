@@ -1,0 +1,8 @@
+Value,Name
+0,Classified land (Has a classification label and is land according to the water mask.)
+1,"Unclassified land (Not classified because of missing data but land according to the water mask, labeled as barren.)"
+2,Classified water (Has a classification label and is water according to the water mask.)
+3,Unclassified water (Not classified because of missing data but water according to the water mask.)
+4,"Classified sea ice (Classified as snow/ice but water mask says it is water and less than 100m elevation, switched to water.)"
+5,"Misclassified water (Classified as water but water mask says it is land, switched to secondary label.)"
+9,Forest type changed (Climate-based change to forest class.)

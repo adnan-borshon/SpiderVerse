@@ -154,9 +154,9 @@ function categorizeTemperatureQuality(flagCode: number): string {
 // Analyze soil moisture data for a specific division
 export async function analyzeSoilMoisture(division: Division) {
   try {
-    const soilStats = await parseCSV<SoilMoistureRecord>(division, 'geographic-soil-moisture-Statistics.csv');
-    const flagStats = await parseCSV<any>(division, 'geographic soil moisture flag statistic.csv');
-    const lookupData = await parseCSV<any>(division, 'geographic-Soil-Moisture-Retrieval-Data-AM-retrieval-qual-flag-lookup.csv');
+    const soilStats = await parseCSV<SoilMoistureRecord>(division, 'SPL3SMP-009-Statistics.csv');
+    const flagStats = await parseCSV<any>(division, 'SPL3SMP-009-Soil-Moisture-Retrieval-Data-AM-retrieval-qual-flag-Statistics-QA.csv');
+    const lookupData = await parseCSV<any>(division, 'SPL3SMP-009-Soil-Moisture-Retrieval-Data-AM-retrieval-qual-flag-lookup.csv');
     
     // Filter only soil moisture data (values between 0 and 1)
     const soilMoistureData = soilStats.filter(record => 
@@ -212,9 +212,9 @@ export async function analyzeSoilMoisture(division: Division) {
 // Analyze temperature data for heat stress for a specific division
 export async function analyzeTemperature(division: Division) {
   try {
-    const tempStats = await parseCSV<TemperatureRecord>(division, 'temperature-Statistics.csv');
-    const qcDayStats = await parseCSV<any>(division, 'temperature-QC-Day-Statistics-QA.csv');
-    const qcLookup = await parseCSV<any>(division, 'temperature-QC-Day-lookup.csv');
+    const tempStats = await parseCSV<TemperatureRecord>(division, 'MYD11A2-061-Statistics.csv');
+    const qcDayStats = await parseCSV<any>(division, 'MYD11A2-061-QC-Day-Statistics-QA.csv');
+    const qcLookup = await parseCSV<any>(division, 'MYD11A2-061-QC-Day-lookup.csv');
     
     if (tempStats.length === 0) {
       throw new Error(`No temperature data found for ${division}`);
@@ -267,9 +267,9 @@ export async function analyzeTemperature(division: Division) {
 // Analyze vegetation/NDVI data for a specific division
 export async function analyzeVegetation(division: Division) {
   try {
-    const vegStats = await parseCSV<VegetationRecord>(division, 'vegetation-Statistics.csv');
-    const qcStats = await parseCSV<any>(division, 'vegetation-250m-16-days-VI-Quality-Statistics-QA.csv');
-    const qcLookup = await parseCSV<any>(division, 'vegetation-250m-16-days-VI-Quality-lookup.csv');
+    const vegStats = await parseCSV<VegetationRecord>(division, 'MOD13Q1-061-Statistics.csv');
+    const qcStats = await parseCSV<any>(division, 'MOD13Q1-061-250m-16-days-VI-Quality-Statistics-QA.csv');
+    const qcLookup = await parseCSV<any>(division, 'MOD13Q1-061-250m-16-days-VI-Quality-lookup.csv');
     
     if (vegStats.length === 0) {
       throw new Error(`No vegetation data found for ${division}`);
