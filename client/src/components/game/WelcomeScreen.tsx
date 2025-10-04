@@ -83,20 +83,20 @@ export const WelcomeScreen: React.FC = () => {
                 <SelectValue placeholder={isLoadingData ? "Loading real NASA data..." : "-- Select District in Rajshahi --"} />
               </SelectTrigger>
               <SelectContent className="bg-white">
-                <SelectItem value="bogra">🌾 Bogra District</SelectItem>
-                <SelectItem value="joypurhat">🌾 Joypurhat District</SelectItem>
-                <SelectItem value="naogaon">🌾 Naogaon District</SelectItem>
-                <SelectItem value="natore">🌾 Natore District</SelectItem>
-                <SelectItem value="nawabganj">🌾 Nawabganj District</SelectItem>
-                <SelectItem value="pabna">🌾 Pabna District</SelectItem>
-                <SelectItem value="rajshahi">🌾 Rajshahi District (Main)</SelectItem>
-                <SelectItem value="sirajganj">🌾 Sirajganj District</SelectItem>
+                <SelectItem value="barishal">🌾 Barishal Division</SelectItem>
+                <SelectItem value="rangpur">🌾 Rangpur Division</SelectItem>
+                <SelectItem value="khulna">🌾 Khulna Division</SelectItem>
+                <SelectItem value="chittagong">🌾 Chittagong Division</SelectItem>
+                <SelectItem value="sylhet">🌾 Sylhet Division</SelectItem>
+            
+                <SelectItem value="rajshahi">🌾 Rajshahi Division</SelectItem>
+               
               </SelectContent>
             </Select>
             
             {isLoadingData && (
               <p className="text-sm text-blue-600 mt-2 animate-pulse">
-                📊 Loading real soil moisture, temperature, and vegetation data from Rajshahi...
+                📊 Loading real soil moisture, temperature, and vegetation data from ${selectedRegion}...
               </p>
             )}
             
