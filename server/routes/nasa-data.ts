@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getRajshahiData } from '../services/rajshahiDataService';
+import { getRajshahiData } from '../services/DivisionDataService';
 
 const router = Router();
 

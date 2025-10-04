@@ -1,19 +1,61 @@
-import type { Express } from "express";
-import { createServer, type Server } from "http";
-import { storage } from "./storage";
-import nasaDataRoutes from "./routes/nasa-data";
+import { Router } from 'express';
+import { getDivisionData, availableDivisions, getRajshahiData } from './services/DivisionDataService';
 
-export async function registerRoutes(app: Express): Promise<Server> {
-  // put application routes here
-  // prefix all routes with /api
+const router = Router();
 
-  // use storage to perform CRUD operations on the storage interface
-  // e.g. storage.insertUser(user) or storage.getUserByUsername(username)
+// Get data for any division
+router.get('/:division', async (req, res) => {
+  try {
+    const { division } = req.params;
+    const divisionLower = division.toLowerCase();
 
-  // NASA data endpoints
-  app.use("/api/nasa-data", nasaDataRoutes);
+    // Validate division parameter
+    if (!availableDivisions.includes(divisionLower as any)) {
+      return res.status(400).json({ 
+        error: 'Invalid division',
+        message: `Division '${division}' not found. Available divisions: ${availableDivisions.join(', ')}`
+      });
+    }
 
-  const httpServer = createServer(app);
+    const data = await getDivisionData(divisionLower as any);
+    res.json(data);
+  } catch (error) {
+    console.error(`Error fetching data for division ${req.params.division}:`, error);
+    res.status(500).json({ 
+      error: `Failed to fetch NASA data for ${req.params.division}`,
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
 
-  return httpServer;
-}
+// Keep backward compatibility for Rajshahi specific route
+router.get('/rajshahi', async (req, res) => {
+  try {
+    const data = await getRajshahiData();
+    res.json(data);
+  } catch (error) {
+    console.error('Error fetching Rajshahi data:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch NASA data for Rajshahi',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Optional: Get list of available divisions
+router.get('/', async (req, res) => {
+  try {
+    res.json({
+      availableDivisions,
+      message: `Use /api/nasa-data/:division where division is one of: ${availableDivisions.join(', ')}`
+    });
+  } catch (error) {
+    console.error('Error fetching division list:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch division list',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+export default router;

@@ -31,10 +31,15 @@ export const Stage2Panel: React.FC = () => {
       setQuizActive(true);
     }, 2000);
   };
-  
-  const lstAnomaly = nasaData.modisLST;
+      const currentNASAData = nasaData || {
+    smapAnomaly: -0.3,
+    modisLST: 2.5,
+    floodRisk: 0.6,
+    ndvi: 0.75
+  };
+  const lstAnomaly = currentNASAData.modisLST;
   const currentTemp = 33 + lstAnomaly;
-  const currentNDVI = nasaData.ndvi;
+  const currentNDVI = currentNASAData.ndvi;
   
   const getHeatColor = (temp: number) => {
     if (temp < 30) return 'bg-green-500';

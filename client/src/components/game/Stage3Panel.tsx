@@ -30,8 +30,13 @@ export const Stage3Panel: React.FC = () => {
       setQuizActive(true);
     }, 2000);
   };
-  
-  const floodRisk = nasaData.floodRisk;
+    const currentNASAData = nasaData || {
+    smapAnomaly: -0.3,
+    modisLST: 2.5,
+    floodRisk: 0.6,
+    ndvi: 0.75
+  };
+  const floodRisk = currentNASAData.floodRisk;
   const floodPercentage = Math.round(floodRisk * 100);
   
   const getFloodColor = (risk: number) => {

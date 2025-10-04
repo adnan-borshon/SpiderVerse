@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export const WelcomeScreen: React.FC = () => {
-  const { setLocation, setPhase, loadRajshahiData } = useFarmGame();
+  const { setLocation, setPhase, loadDivisionData } = useFarmGame();
   const [selectedRegion, setSelectedRegion] = useState<string>('');
   const [customLocation, setCustomLocation] = useState({
     name: '',
@@ -30,7 +30,7 @@ export const WelcomeScreen: React.FC = () => {
         if ('useRealData' in location && location.useRealData) {
           setIsLoadingData(true);
           try {
-            await loadRajshahiData();
+            await loadDivisionData(location.name);
             // Set the selected district location after loading NASA data
             setLocation(location);
             console.log('✅ Real Rajshahi data loaded successfully for', location.name);

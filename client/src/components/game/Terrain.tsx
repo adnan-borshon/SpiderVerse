@@ -3,13 +3,38 @@ import { useFarmGame } from '@/lib/stores/useFarmGame';
 import * as THREE from 'three';
 
 export const Terrain: React.FC = () => {
-  const { nasaData, stage1Decision, cropStage, phase } = useFarmGame();
+  const { nasaData, stage1Decision, cropStage, phase, location } = useFarmGame();
   
+  // Debug logging
+  React.useEffect(() => {
+    console.log('🏞️ Terrain Debug:', {
+      nasaData,
+      stage1Decision,
+      cropStage,
+      phase,
+      location: location?.name
+    });
+  }, [nasaData, stage1Decision, cropStage, phase, location]);
+
+  // Handle null nasaData with fallback values
+  const currentNASAData = nasaData || {
+    smapAnomaly: -0.3,
+    modisLST: 2.5,
+    floodRisk: 0.6,
+    ndvi: 0.75
+  };
+
   // Determine soil color based on moisture and stage
   const soilColor = useMemo(() => {
+    console.log('🎨 Calculating soil color:', {
+      smapAnomaly: currentNASAData.smapAnomaly,
+      cropStage,
+      location: location?.name
+    });
+
     // Before planting or during planting, show brown soil
     if (cropStage === 'none' || cropStage === 'planting') {
-      const anomaly = nasaData.smapAnomaly;
+      const anomaly = currentNASAData.smapAnomaly;
       if (anomaly < -0.4) return '#6B4423'; // Very dry - dark brown
       if (anomaly < -0.2) return '#8B6914'; // Dry - medium brown
       if (anomaly < 0) return '#A0792C'; // Slightly dry - light brown
@@ -18,10 +43,12 @@ export const Terrain: React.FC = () => {
     
     // After planting, show soil with green tint (vegetation growing)
     return '#5A5A3A'; // Dark greenish brown (soil with vegetation)
-  }, [nasaData.smapAnomaly, cropStage]);
+  }, [currentNASAData.smapAnomaly, cropStage, location]);
   
   // Generate plowed field rows
   const plowedRows = useMemo(() => {
+    console.log('🚜 Generating plowed rows for:', location?.name || 'unknown location');
+    
     const rows: JSX.Element[] = [];
     const numRows = 18;
     const rowSpacing = 3.5;
@@ -52,11 +79,19 @@ export const Terrain: React.FC = () => {
     }
     
     return rows;
-  }, []);
+  }, [location]);
   
   // Show cracks in dry soil before irrigation
-  const showCracks = nasaData.smapAnomaly < -0.3 && !stage1Decision;
-  
+  const showCracks = currentNASAData.smapAnomaly < -0.3 && !stage1Decision;
+
+  console.log('🏜️ Terrain Conditions:', {
+    showCracks,
+    soilMoisture: currentNASAData.smapAnomaly,
+    hasIrrigation: stage1Decision === 'irrigate',
+    cropStage,
+    location: location?.name
+  });
+
   return (
     <group>
       {/* Base terrain - larger area */}
@@ -113,6 +148,20 @@ export const Terrain: React.FC = () => {
         </group>
       )}
       
+      {/* Flood water overlay (if flood occurred in stage 3) */}
+      {cropStage === 'harvested' && (
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.15, 0]}>
+          <planeGeometry args={[70, 70]} />
+          <meshStandardMaterial
+            color="#1E3A8A"
+            transparent
+            opacity={0.3}
+            roughness={0.1}
+            metalness={0.8}
+          />
+        </mesh>
+      )}
+      
       {/* Field borders - wooden stakes and string */}
       {Array.from({ length: 8 }).map((_, i) => {
         const angle = (i / 8) * Math.PI * 2;
@@ -127,6 +176,27 @@ export const Terrain: React.FC = () => {
           </mesh>
         );
       })}
+
+      {/* Location marker sign */}
+      {location && (
+        <group position={[0, 2, -25]}>
+          {/* Sign post */}
+          <mesh position={[0, -1, 0]}>
+            <cylinderGeometry args={[0.1, 0.1, 2]} />
+            <meshStandardMaterial color="#8B4513" roughness={0.9} />
+          </mesh>
+          {/* Sign board */}
+          <mesh position={[0, 0.5, 0]} rotation={[0, 0, 0]}>
+            <boxGeometry args={[3, 1, 0.1]} />
+            <meshStandardMaterial color="#D4AF37" roughness={0.7} />
+          </mesh>
+          {/* Sign text area (simplified) */}
+          <mesh position={[0, 0.5, 0.06]} rotation={[0, 0, 0]}>
+            <planeGeometry args={[2.8, 0.8]} />
+            <meshBasicMaterial color="#000000" transparent opacity={0.8} />
+          </mesh>
+        </group>
+      )}
     </group>
   );
 };

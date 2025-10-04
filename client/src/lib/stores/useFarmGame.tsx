@@ -49,7 +49,7 @@ interface FarmGameState {
   stage3Decision: Stage3Decision;
   
   // NASA data
-  nasaData: NASAData;
+  nasaData: NASAData | null;
   
   // Multipliers
   multipliers: Multipliers;
@@ -85,11 +85,15 @@ interface FarmGameState {
   daysPassed: number;
   daysPassedMessage: string;
   showDaysPassedModal: boolean;
+
+  // Loading state
+  isLoading: boolean;
+  error: string | null;
   
   // Actions
   setPhase: (phase: GamePhase) => void;
   setLocation: (location: Location) => void;
-  loadRajshahiData: () => Promise<void>;
+  loadDivisionData: (division: string) => Promise<void>;
   setStage1Decision: (decision: Stage1Decision) => void;
   processStage1Decision: () => void;
   setStage2Decision: (decision: Stage2Decision) => void;
@@ -106,12 +110,13 @@ interface FarmGameState {
   resetGame: () => void;
 }
 
-const initialNASAData: NASAData = {
+// Helper function to get default NASA data (fallback only)
+const getDefaultNASAData = (): NASAData => ({
   smapAnomaly: -0.3,
   modisLST: 2.5,
   floodRisk: 0.6,
   ndvi: 0.75
-};
+});
 
 export const useFarmGame = create<FarmGameState>((set, get) => ({
   phase: 'welcome',
@@ -124,7 +129,7 @@ export const useFarmGame = create<FarmGameState>((set, get) => ({
   stage1Decision: null,
   stage2Decision: null,
   stage3Decision: null,
-  nasaData: initialNASAData,
+  nasaData: null, // Start with null until data is loaded
   multipliers: {
     germination: 1.0,
     drought: 1.0,
@@ -151,6 +156,8 @@ export const useFarmGame = create<FarmGameState>((set, get) => ({
   daysPassed: 0,
   daysPassedMessage: '',
   showDaysPassedModal: false,
+  isLoading: false,
+  error: null,
   
   setPhase: (phase) => {
     const currentStage = phase === 'stage1' ? 1 : 
@@ -164,33 +171,36 @@ export const useFarmGame = create<FarmGameState>((set, get) => ({
     set({ location });
   },
 
-  loadRajshahiData: async () => {
+  loadDivisionData: async (division: string) => {
+    set({ isLoading: true, error: null });
+    
     try {
-      const response = await fetch('/api/nasa-data/rajshahi');
+      const response = await fetch(`/api/nasa-data/${division.toLowerCase()}`);
       if (!response.ok) {
-        throw new Error('Failed to fetch Rajshahi data');
+        throw new Error(`Failed to fetch ${division} data: ${response.statusText}`);
       }
       
       const data = await response.json();
       
       set({
         location: data.location,
-        nasaData: data.nasaData
+        nasaData: data.nasaData,
+        isLoading: false,
+        error: null
       });
       
-      console.log('✅ Loaded real Rajshahi data:', data);
+      console.log(`✅ Loaded real ${division} data:`, data);
     } catch (error) {
-      console.error('❌ Error loading Rajshahi data:', error);
+      console.error(`❌ Error loading ${division} data:`, error);
+      
       // Fallback to default values if fetch fails
+      const fallbackData = await getFallbackDivisionData(division);
+      
       set({
-        location: {
-          name: "Rajshahi",
-          country: "Bangladesh",
-          coordinates: { lat: 24.3745, lon: 88.6042 },
-          climate: "Subtropical monsoon",
-          mainCrop: "Wheat"
-        },
-        nasaData: initialNASAData
+        location: fallbackData.location,
+        nasaData: fallbackData.nasaData,
+        isLoading: false,
+        error: `Failed to load ${division} data. Using simulated data.`
       });
     }
   },
@@ -200,10 +210,13 @@ export const useFarmGame = create<FarmGameState>((set, get) => ({
   processStage1Decision: () => {
     const { stage1Decision, nasaData } = get();
     
+    // Use actual NASA data or fallback to defaults
+    const currentNASAData = nasaData || getDefaultNASAData();
+    
     if (stage1Decision === 'noIrrigate') {
       // Poor germination due to dry conditions - takes longer
       const germinationRate = 0.70;
-      const droughtFactor = Math.max(0.3, 1 + 0.8 * nasaData.smapAnomaly);
+      const droughtFactor = Math.max(0.3, 1 + 0.8 * currentNASAData.smapAnomaly);
       
       set({
         multipliers: {
@@ -244,7 +257,10 @@ export const useFarmGame = create<FarmGameState>((set, get) => ({
   
   processStage2Decision: () => {
     const { stage2Decision, nasaData } = get();
-    const lstAnomaly = nasaData.modisLST;
+    
+    // Use actual NASA data or fallback to defaults
+    const currentNASAData = nasaData || getDefaultNASAData();
+    const lstAnomaly = currentNASAData.modisLST;
     
     if (stage2Decision === 'emergencyIrrigation') {
       // Apply emergency irrigation costs and benefits
@@ -279,7 +295,10 @@ export const useFarmGame = create<FarmGameState>((set, get) => ({
   setStage3Decision: (decision) => set({ stage3Decision: decision }),
   
   processStage3Decision: () => {
-    const { stage3Decision } = get();
+    const { stage3Decision, nasaData } = get();
+    
+    // Use actual NASA data or fallback to defaults for flood risk
+    const currentNASAData = nasaData || getDefaultNASAData();
     
     if (stage3Decision === 'harvestEarly') {
       // Early harvest path - immediate harvest
@@ -299,8 +318,8 @@ export const useFarmGame = create<FarmGameState>((set, get) => ({
         showDaysPassedModal: true
       });
     } else if (stage3Decision === 'waitForRipeness') {
-      // Wait for maturity path - 10 days
-      const floodOccurs = Math.random() < 0.60;
+      // Wait for maturity path - use actual flood risk from NASA data
+      const floodOccurs = Math.random() < currentNASAData.floodRisk;
       
       set({
         day: get().day + 7,
@@ -353,7 +372,7 @@ export const useFarmGame = create<FarmGameState>((set, get) => ({
     stage1Decision: null,
     stage2Decision: null,
     stage3Decision: null,
-    nasaData: initialNASAData,
+    nasaData: null, // Reset to null
     multipliers: {
       germination: 1.0,
       drought: 1.0,
@@ -376,6 +395,116 @@ export const useFarmGame = create<FarmGameState>((set, get) => ({
     cropMaturity: 90,
     pricePerBushel: 6.5,
     day: 100,
-    floodOccurred: false
+    floodOccurred: false,
+    isLoading: false,
+    error: null
   })
 }));
+
+// Fallback data generator for when API fails
+async function getFallbackDivisionData(division: string): Promise<{ location: Location; nasaData: NASAData }> {
+  const divisionFallbacks: Record<string, { location: Location; nasaData: NASAData }> = {
+    rajshahi: {
+      location: {
+        name: "Rajshahi",
+        country: "Bangladesh",
+        coordinates: { lat: 24.3745, lon: 88.6042 },
+        climate: "Subtropical monsoon",
+        mainCrop: "Wheat"
+      },
+      nasaData: {
+        smapAnomaly: -0.4,
+        modisLST: 3.2,
+        floodRisk: 0.5,
+        ndvi: 0.68
+      }
+    },
+    barishal: {
+      location: {
+        name: "Barishal",
+        country: "Bangladesh",
+        coordinates: { lat: 22.7010, lon: 90.3535 },
+        climate: "Tropical monsoon",
+        mainCrop: "Rice"
+      },
+      nasaData: {
+        smapAnomaly: 0.1,
+        modisLST: 2.8,
+        floodRisk: 0.8,
+        ndvi: 0.72
+      }
+    },
+    khulna: {
+      location: {
+        name: "Khulna",
+        country: "Bangladesh",
+        coordinates: { lat: 22.8456, lon: 89.5403 },
+        climate: "Tropical monsoon",
+        mainCrop: "Shrimp & Rice"
+      },
+      nasaData: {
+        smapAnomaly: 0.2,
+        modisLST: 2.9,
+        floodRisk: 0.7,
+        ndvi: 0.65
+      }
+    },
+    sylhet: {
+      location: {
+        name: "Sylhet",
+        country: "Bangladesh",
+        coordinates: { lat: 24.8910, lon: 91.8697 },
+        climate: "Subtropical highland",
+        mainCrop: "Tea"
+      },
+      nasaData: {
+        smapAnomaly: 0.3,
+        modisLST: 1.8,
+        floodRisk: 0.9,
+        ndvi: 0.85
+      }
+    },
+    chittagong: {
+      location: {
+        name: "Chittagong",
+        country: "Bangladesh",
+        coordinates: { lat: 22.3569, lon: 91.7832 },
+        climate: "Tropical monsoon",
+        mainCrop: "Rice"
+      },
+      nasaData: {
+        smapAnomaly: 0.15,
+        modisLST: 2.5,
+        floodRisk: 0.6,
+        ndvi: 0.78
+      }
+    },
+    rangpur: {
+      location: {
+        name: "Rangpur",
+        country: "Bangladesh",
+        coordinates: { lat: 25.7439, lon: 89.2752 },
+        climate: "Subtropical",
+        mainCrop: "Potato & Wheat"
+      },
+      nasaData: {
+        smapAnomaly: -0.2,
+        modisLST: 2.2,
+        floodRisk: 0.6,
+        ndvi: 0.70
+      }
+    }
+  };
+
+  // Return division-specific data or a generic fallback
+  return divisionFallbacks[division.toLowerCase()] || {
+    location: {
+      name: division.charAt(0).toUpperCase() + division.slice(1),
+      country: "Bangladesh",
+      coordinates: { lat: 0, lon: 0 },
+      climate: "Unknown",
+      mainCrop: "Wheat"
+    },
+    nasaData: getDefaultNASAData()
+  };
+}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useFarmGame } from '@/lib/stores/useFarmGame';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -8,20 +8,21 @@ interface DataVisualizationProps {
 
 export const DataVisualization: React.FC<DataVisualizationProps> = ({ type }) => {
   const { nasaData, location } = useFarmGame();
-  const [chartData, setChartData] = useState<any>(null);
-
-  useEffect(() => {
-    // Use the real NASA data from our store
-    if (nasaData) {
-      setChartData(nasaData);
-    }
-  }, [nasaData]);
 
   const renderVisualization = () => {
+    // Use actual NASA data or fallback values
+    const currentData = nasaData || {
+      smapAnomaly: 0.324,
+      modisLST: 2.5,
+      ndvi: 0.543,
+      floodRisk: 0.6
+    };
+
     switch(type) {
       case 'soil-moisture':
-        const moistureValue = chartData?.smapAnomaly || 0.324;
-        const moisturePercent = Math.min(100, Math.max(0, (moistureValue + 0.5) * 100));
+        // Convert SMAP anomaly to actual soil moisture value (0-1 scale)
+        const moistureValue = currentData.smapAnomaly + 0.5; // Convert anomaly to actual value
+        const moisturePercent = Math.min(100, Math.max(0, moistureValue * 100));
         return (
           <div className="space-y-4">
             <div className="bg-gray-800 rounded-lg p-4">
@@ -50,16 +51,18 @@ export const DataVisualization: React.FC<DataVisualizationProps> = ({ type }) =>
               </div>
               
               <div className="mt-4 text-sm text-gray-300">
-                <p>📍 Location: {location?.name || 'Rajshahi'}</p>
+                <p>📍 Location: {location?.name || 'Loading...'}</p>
                 <p>📅 Updated: Real-time SMAP satellite data</p>
-                <p>📊 485 data points analyzed</p>
+                <p>📊 SMAP Anomaly: {currentData.smapAnomaly > 0 ? '+' : ''}{currentData.smapAnomaly.toFixed(3)}</p>
               </div>
             </div>
           </div>
         );
 
       case 'temperature':
-        const tempValue = 25.1; // Average from our dataset
+        // Convert MODIS LST anomaly to actual temperature (using base temp + anomaly)
+        const baseTemp = 23.0; // Base temperature for the region
+        const tempValue = baseTemp + currentData.modisLST; // Add anomaly to base
         const heatStress = tempValue > 30;
         return (
           <div className="space-y-4">
@@ -68,7 +71,7 @@ export const DataVisualization: React.FC<DataVisualizationProps> = ({ type }) =>
               <div className="flex items-center justify-between mb-4">
                 <span className="text-sm text-gray-400">Current Temperature</span>
                 <span className={`text-3xl font-bold ${heatStress ? 'text-red-500' : 'text-green-400'}`}>
-                  {tempValue}°C
+                  {tempValue.toFixed(1)}°C
                 </span>
               </div>
               
@@ -100,15 +103,15 @@ export const DataVisualization: React.FC<DataVisualizationProps> = ({ type }) =>
               </div>
               
               <div className="mt-4 text-sm text-gray-300">
-                <p>📍 Location: {location?.name || 'Rajshahi'}</p>
-                <p>📅 Data: 237 MODIS records analyzed</p>
+                <p>📍 Location: {location?.name || 'Loading...'}</p>
+                <p>📅 Temperature Anomaly: {currentData.modisLST > 0 ? '+' : ''}{currentData.modisLST.toFixed(1)}°C</p>
               </div>
             </div>
           </div>
         );
 
       case 'vegetation':
-        const ndviValue = chartData?.ndvi || 0.543;
+        const ndviValue = currentData.ndvi;
         return (
           <div className="space-y-4">
             <div className="bg-gray-800 rounded-lg p-4">
@@ -144,16 +147,20 @@ export const DataVisualization: React.FC<DataVisualizationProps> = ({ type }) =>
               </div>
               
               <div className="mt-4 text-sm text-gray-300">
-                <p>📍 Location: {location?.name || 'Rajshahi'}</p>
-                <p>📅 Data: 63 vegetation records analyzed</p>
-                <p>🌱 Status: {ndviValue > 0.5 ? 'Good crop health' : 'Needs attention'}</p>
+                <p>📍 Location: {location?.name || 'Loading...'}</p>
+                <p>📅 Data: Real-time MODIS vegetation data</p>
+                <p>🌱 Status: {
+                  ndviValue > 0.65 ? 'Excellent crop health' :
+                  ndviValue > 0.5 ? 'Good crop health' :
+                  ndviValue > 0.35 ? 'Moderate crop health' : 'Poor crop health'
+                }</p>
               </div>
             </div>
           </div>
         );
 
       case 'flood':
-        const floodRisk = chartData?.floodRisk || 0.6;
+        const floodRisk = currentData.floodRisk;
         const riskLevel = floodRisk > 0.7 ? 'High' : floodRisk > 0.4 ? 'Moderate' : 'Low';
         return (
           <div className="space-y-4">
@@ -183,17 +190,28 @@ export const DataVisualization: React.FC<DataVisualizationProps> = ({ type }) =>
               <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
                 <div className="bg-gray-700 p-2 rounded">
                   <span className="text-gray-400">Rainfall:</span>
-                  <span className="ml-2 text-white">Moderate</span>
+                  <span className="ml-2 text-white">{
+                    floodRisk > 0.7 ? 'Heavy' :
+                    floodRisk > 0.4 ? 'Moderate' : 'Light'
+                  }</span>
                 </div>
                 <div className="bg-gray-700 p-2 rounded">
                   <span className="text-gray-400">River Level:</span>
-                  <span className="ml-2 text-white">Normal</span>
+                  <span className="ml-2 text-white">{
+                    floodRisk > 0.7 ? 'High' :
+                    floodRisk > 0.4 ? 'Moderate' : 'Normal'
+                  }</span>
                 </div>
               </div>
               
               <div className="mt-4 text-sm text-gray-300">
-                <p>📍 Location: {location?.name || 'Rajshahi'}</p>
-                <p>📅 Based on historical flood patterns</p>
+                <p>📍 Location: {location?.name || 'Loading...'}</p>
+                <p>📅 Based on {location?.name ? `${location.name} ` : ''}historical flood patterns</p>
+                <p>⚠️ Risk Assessment: {
+                  riskLevel === 'High' ? 'High probability of flooding in next 10 days' :
+                  riskLevel === 'Moderate' ? 'Moderate flood risk - monitor conditions' :
+                  'Low flood risk - normal conditions'
+                }</p>
               </div>
             </div>
           </div>

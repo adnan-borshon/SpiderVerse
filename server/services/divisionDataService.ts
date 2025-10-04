@@ -53,18 +53,68 @@ const NDVI_THRESHOLDS = {
   Poor: 0.20
 };
 
-// Data paths
-const DATA_DIR = path.join(__dirname, '../data/Rajshahi');
+// Division information mapping
+const DIVISION_INFO = {
+  rajshahi: {
+    name: "Rajshahi",
+    country: "Bangladesh",
+    coordinates: { lat: 24.3745, lon: 88.6042 },
+    climate: "Subtropical monsoon",
+    mainCrop: "Wheat"
+  },
+  barishal: {
+    name: "Barishal",
+    country: "Bangladesh", 
+    coordinates: { lat: 22.7010, lon: 90.3535 },
+    climate: "Tropical monsoon",
+    mainCrop: "Rice"
+  },
+  khulna: {
+    name: "Khulna",
+    country: "Bangladesh",
+    coordinates: { lat: 22.8456, lon: 89.5403 },
+    climate: "Tropical monsoon",
+    mainCrop: "Shrimp & Rice"
+  },
+  sylhet: {
+    name: "Sylhet",
+    country: "Bangladesh",
+    coordinates: { lat: 24.8910, lon: 91.8697 },
+    climate: "Subtropical highland",
+    mainCrop: "Tea"
+  },
+  chittagong: {
+    name: "Chittagong",
+    country: "Bangladesh",
+    coordinates: { lat: 22.3569, lon: 91.7832 },
+    climate: "Tropical monsoon",
+    mainCrop: "Rice"
+  },
+  rangpur: {
+    name: "Rangpur",
+    country: "Bangladesh",
+    coordinates: { lat: 25.7439, lon: 89.2752 },
+    climate: "Subtropical",
+    mainCrop: "Potato & Wheat"
+  }
+};
 
-// Parse CSV file
-async function parseCSV<T>(filePath: string): Promise<T[]> {
+type Division = keyof typeof DIVISION_INFO;
+
+// Get data directory path for a specific division
+function getDataDir(division: Division): string {
+  return path.join(__dirname, `../data/${division.charAt(0).toUpperCase() + division.slice(1)}`);
+}
+
+// Parse CSV file for a specific division
+async function parseCSV<T>(division: Division, filePath: string): Promise<T[]> {
   return new Promise((resolve, reject) => {
     const results: T[] = [];
-    const fullPath = path.join(DATA_DIR, filePath);
+    const fullPath = path.join(getDataDir(division), filePath);
     
     if (!fs.existsSync(fullPath)) {
-      console.error(`File not found: ${fullPath}`);
-      return reject(new Error(`File not found: ${filePath}`));
+      console.error(`File not found for ${division}: ${fullPath}`);
+      return reject(new Error(`File not found for ${division}: ${filePath}`));
     }
 
     const fileContent = fs.readFileSync(fullPath, 'utf-8');
@@ -101,12 +151,12 @@ function categorizeTemperatureQuality(flagCode: number): string {
   return "Moderate";
 }
 
-// Analyze soil moisture data
-export async function analyzeSoilMoisture() {
+// Analyze soil moisture data for a specific division
+export async function analyzeSoilMoisture(division: Division) {
   try {
-    const soilStats = await parseCSV<SoilMoistureRecord>('geographic-soil-moisture-Statistics.csv');
-    const flagStats = await parseCSV<any>('geographic soil moisture flag statistic.csv');
-    const lookupData = await parseCSV<any>('geographic-Soil-Moisture-Retrieval-Data-AM-retrieval-qual-flag-lookup.csv');
+    const soilStats = await parseCSV<SoilMoistureRecord>(division, 'geographic-soil-moisture-Statistics.csv');
+    const flagStats = await parseCSV<any>(division, 'geographic soil moisture flag statistic.csv');
+    const lookupData = await parseCSV<any>(division, 'geographic-Soil-Moisture-Retrieval-Data-AM-retrieval-qual-flag-lookup.csv');
     
     // Filter only soil moisture data (values between 0 and 1)
     const soilMoistureData = soilStats.filter(record => 
@@ -114,7 +164,7 @@ export async function analyzeSoilMoisture() {
     );
     
     if (soilMoistureData.length === 0) {
-      throw new Error('No valid soil moisture data found');
+      throw new Error(`No valid soil moisture data found for ${division}`);
     }
     
     const avgMoisture = soilMoistureData.reduce((sum, record) => sum + record.Mean, 0) / soilMoistureData.length;
@@ -154,20 +204,20 @@ export async function analyzeSoilMoisture() {
       recordCount: soilMoistureData.length
     };
   } catch (error) {
-    console.error('Error analyzing soil moisture:', error);
+    console.error(`Error analyzing soil moisture for ${division}:`, error);
     throw error;
   }
 }
 
-// Analyze temperature data for heat stress
-export async function analyzeTemperature() {
+// Analyze temperature data for heat stress for a specific division
+export async function analyzeTemperature(division: Division) {
   try {
-    const tempStats = await parseCSV<TemperatureRecord>('temperature-Statistics.csv');
-    const qcDayStats = await parseCSV<any>('temperature-QC-Day-Statistics-QA.csv');
-    const qcLookup = await parseCSV<any>('temperature-QC-Day-lookup.csv');
+    const tempStats = await parseCSV<TemperatureRecord>(division, 'temperature-Statistics.csv');
+    const qcDayStats = await parseCSV<any>(division, 'temperature-QC-Day-Statistics-QA.csv');
+    const qcLookup = await parseCSV<any>(division, 'temperature-QC-Day-lookup.csv');
     
     if (tempStats.length === 0) {
-      throw new Error('No temperature data found');
+      throw new Error(`No temperature data found for ${division}`);
     }
     
     const avgTemp = tempStats.reduce((sum, record) => sum + record.Mean, 0) / tempStats.length;
@@ -209,20 +259,20 @@ export async function analyzeTemperature() {
       recordCount: tempStats.length
     };
   } catch (error) {
-    console.error('Error analyzing temperature:', error);
+    console.error(`Error analyzing temperature for ${division}:`, error);
     throw error;
   }
 }
 
-// Analyze vegetation/NDVI data
-export async function analyzeVegetation() {
+// Analyze vegetation/NDVI data for a specific division
+export async function analyzeVegetation(division: Division) {
   try {
-    const vegStats = await parseCSV<VegetationRecord>('vegetation-Statistics.csv');
-    const qcStats = await parseCSV<any>('vegetation-250m-16-days-VI-Quality-Statistics-QA.csv');
-    const qcLookup = await parseCSV<any>('vegetation-250m-16-days-VI-Quality-lookup.csv');
+    const vegStats = await parseCSV<VegetationRecord>(division, 'vegetation-Statistics.csv');
+    const qcStats = await parseCSV<any>(division, 'vegetation-250m-16-days-VI-Quality-Statistics-QA.csv');
+    const qcLookup = await parseCSV<any>(division, 'vegetation-250m-16-days-VI-Quality-lookup.csv');
     
     if (vegStats.length === 0) {
-      throw new Error('No vegetation data found');
+      throw new Error(`No vegetation data found for ${division}`);
     }
     
     const avgNDVI = vegStats.reduce((sum, record) => sum + record.Mean, 0) / vegStats.length;
@@ -257,34 +307,34 @@ export async function analyzeVegetation() {
       recordCount: vegStats.length
     };
   } catch (error) {
-    console.error('Error analyzing vegetation:', error);
+    console.error(`Error analyzing vegetation for ${division}:`, error);
     throw error;
   }
 }
 
-// Get comprehensive Rajshahi data for the game
-export async function getRajshahiData() {
+// Get comprehensive data for any division
+export async function getDivisionData(division: Division) {
   try {
     const [soilData, tempData, vegData] = await Promise.all([
-      analyzeSoilMoisture(),
-      analyzeTemperature(),
-      analyzeVegetation()
+      analyzeSoilMoisture(division),
+      analyzeTemperature(division),
+      analyzeVegetation(division)
     ]);
+    
+    const divisionInfo = DIVISION_INFO[division];
+    
+    if (!divisionInfo) {
+      throw new Error(`No information found for division: ${division}`);
+    }
     
     // Combine all data in the format the game expects
     return {
-      location: {
-        name: "Rajshahi",
-        country: "Bangladesh",
-        coordinates: { lat: 24.3745, lon: 88.6042 },
-        climate: "Subtropical monsoon",
-        mainCrop: "Wheat"
-      },
+      location: divisionInfo,
       nasaData: {
         smapAnomaly: soilData.smapAnomaly,
         modisLST: tempData.modisLST,
         ndvi: vegData.ndvi,
-        floodRisk: 0.6 // This would need flood pathfinder data - using reasonable value for Bangladesh
+        floodRisk: calculateFloodRisk(division) // Custom flood risk based on division
       },
       analysis: {
         soilMoisture: soilData,
@@ -293,7 +343,29 @@ export async function getRajshahiData() {
       }
     };
   } catch (error) {
-    console.error('Error getting Rajshahi data:', error);
+    console.error(`Error getting data for ${division}:`, error);
     throw error;
   }
 }
+
+// Calculate flood risk based on division characteristics
+function calculateFloodRisk(division: Division): number {
+  const floodRiskMap: Record<Division, number> = {
+    barishal: 0.8,    // High flood risk (coastal)
+    khulna: 0.7,      // High flood risk (coastal)
+    chittagong: 0.6,  // Moderate flood risk (hilly but coastal)
+    sylhet: 0.9,      // Very high flood risk (floodplain)
+    rajshahi: 0.5,    // Moderate flood risk (floodplain but drier)
+    rangpur: 0.6      // Moderate flood risk (floodplain)
+  };
+  
+  return floodRiskMap[division] || 0.5;
+}
+
+// Backward compatibility - keep the original function name for Rajshahi
+export async function getRajshahiData() {
+  return getDivisionData('rajshahi');
+}
+
+// Export available divisions
+export const availableDivisions = Object.keys(DIVISION_INFO) as Division[];
