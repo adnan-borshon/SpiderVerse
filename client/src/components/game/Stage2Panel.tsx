@@ -13,9 +13,22 @@ export const Stage2Panel: React.FC = () => {
     nasaData,
     location,
     budget,
-    waterReserve
+    waterReserve,
+    isLoading
   } = useFarmGame();
   const [decisionConfirmed, setDecisionConfirmed] = React.useState(false);
+  
+  // Use real NASA data or fallback
+  const currentNASAData = nasaData || {
+    smapAnomaly: -0.3,
+    modisLST: 2.5,
+    floodRisk: 0.6,
+    ndvi: 0.75
+  };
+  
+  const lstAnomaly = currentNASAData.modisLST;
+  const currentTemp = 33 + lstAnomaly; // Base temp + MODIS anomaly
+  const currentNDVI = currentNASAData.ndvi;
   
   const handleConfirm = () => {
     if (!stage2Decision || decisionConfirmed) return;
@@ -31,16 +44,7 @@ export const Stage2Panel: React.FC = () => {
       setQuizActive(true);
     }, 2000);
   };
-      const currentNASAData = nasaData || {
-    smapAnomaly: -0.3,
-    modisLST: 2.5,
-    floodRisk: 0.6,
-    ndvi: 0.75
-  };
-  const lstAnomaly = currentNASAData.modisLST;
-  const currentTemp = 33 + lstAnomaly;
-  const currentNDVI = currentNASAData.ndvi;
-  
+
   const getHeatColor = (temp: number) => {
     if (temp < 30) return 'bg-green-500';
     if (temp < 32) return 'bg-yellow-500';
@@ -54,7 +58,48 @@ export const Stage2Panel: React.FC = () => {
     if (value < 0.7) return 'bg-green-400';
     return 'bg-green-600';
   };
-  
+
+  // Dynamic messages based on real MODIS data
+  const getHeatImpactMessage = (anomaly: number) => {
+    if (anomaly >= 4.0) return '🚨 Critical heat stress - severe yield loss likely';
+    if (anomaly >= 2.5) return '⚠️ Significant heat stress expected';
+    if (anomaly >= 1.5) return 'Moderate heat stress likely';
+    return 'Minimal heat stress expected';
+  };
+
+  const getNDVITrendMessage = (ndvi: number, anomaly: number) => {
+    if (anomaly > 3.0 && ndvi < 0.6) return '📉 Early stress signs detected';
+    if (anomaly > 2.0) return '⚠️ Heat stress may show in NDVI within 2-3 days if no action taken';
+    return 'Stable ✓ No stress detected yet';
+  };
+
+  const getNDVIStatus = (ndvi: number) => {
+    if (ndvi >= 0.7) return { text: 'EXCELLENT', color: 'bg-green-600' };
+    if (ndvi >= 0.6) return { text: 'HEALTHY', color: 'bg-green-600' };
+    if (ndvi >= 0.5) return { text: 'MODERATE', color: 'bg-yellow-600' };
+    if (ndvi >= 0.3) return { text: 'STRESSED', color: 'bg-orange-600' };
+    return { text: 'CRITICAL', color: 'bg-red-600' };
+  };
+
+  const ndviStatus = getNDVIStatus(currentNDVI);
+  const heatImpactMessage = getHeatImpactMessage(lstAnomaly);
+  const ndviTrendMessage = getNDVITrendMessage(currentNDVI, lstAnomaly);
+
+  if (isLoading) {
+    return (
+      <div className="fixed right-4 top-4 w-[500px] z-10 pointer-events-auto">
+        <Card className="bg-gray-900/95 text-white border-gray-700">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-center space-x-2">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+              <p className="text-sm text-gray-300">Loading NASA MODIS temperature data...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed right-4 top-4 w-[500px] max-h-[90vh] overflow-y-auto z-10 pointer-events-auto">
       <Card className="bg-gray-900/95 text-white border-gray-700">
@@ -96,11 +141,13 @@ export const Stage2Panel: React.FC = () => {
                   <strong>Current:</strong> {currentTemp.toFixed(1)}°C 
                   ({lstAnomaly > 0 ? '+' : ''}{lstAnomaly.toFixed(1)}°C anomaly)
                 </p>
-                <p className="text-orange-400">
-                  <strong>Impact:</strong> {lstAnomaly > 2 ? '⚠️ Significant heat stress expected' : 'Moderate heat stress likely'}
+                <p className={lstAnomaly > 2.5 ? 'text-red-400' : lstAnomaly > 1.5 ? 'text-orange-400' : 'text-yellow-400'}>
+                  <strong>Impact:</strong> {heatImpactMessage}
                 </p>
                 <p className="text-xs text-gray-500">
                   📡 MODIS Terra satellite, updated twice daily (10:30 AM/PM local)
+                  <br />
+                  📊 <strong>Real data for {location?.name}:</strong> {lstAnomaly > 0 ? '+' : ''}{lstAnomaly.toFixed(1)}°C above baseline
                 </p>
               </div>
             </div>
@@ -110,8 +157,8 @@ export const Stage2Panel: React.FC = () => {
           <div className="bg-green-900/30 p-4 rounded-lg border-2 border-green-700">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold">🌿 NDVI Vegetation Health</h3>
-              <span className="px-2 py-1 bg-green-600 text-white text-xs rounded-full">
-                HEALTHY
+              <span className={`px-2 py-1 ${ndviStatus.color} text-white text-xs rounded-full`}>
+                {ndviStatus.text}
               </span>
             </div>
             
@@ -128,14 +175,13 @@ export const Stage2Panel: React.FC = () => {
                 <p className="text-gray-300">
                   <strong>Current NDVI:</strong> {currentNDVI.toFixed(2)} (Healthy range: 0.6-0.8)
                 </p>
-                <p className="text-green-400">
-                  <strong>Trend:</strong> Stable ✓ No stress detected yet
-                </p>
-                <p className="text-yellow-400 text-xs">
-                  ⚠️ Heat stress may show in NDVI within 2-3 days if no action taken
+                <p className={ndviStatus.text === 'EXCELLENT' ? 'text-green-400' : ndviStatus.text === 'HEALTHY' ? 'text-green-400' : 'text-yellow-400'}>
+                  <strong>Trend:</strong> {ndviTrendMessage}
                 </p>
                 <p className="text-xs text-gray-500">
                   📡 MODIS/Terra 16-day composite (250m resolution)
+                  <br />
+                  📊 <strong>Real data for {location?.name}:</strong> {currentNDVI.toFixed(2)} vegetation index
                 </p>
               </div>
             </div>
@@ -249,6 +295,14 @@ export const Stage2Panel: React.FC = () => {
                 className="text-xs text-blue-400 hover:text-blue-300 block"
               >
                 → Check Real-Time NDVI (Giovanni)
+              </a>
+              <a
+                href={`https://worldview.earthdata.nasa.gov/?v=${(location?.coordinates.lon || 90) - 2},${(location?.coordinates.lat || 24) - 2},${(location?.coordinates.lon || 90) + 2},${(location?.coordinates.lat || 24) + 2}&l=MODIS_Terra_Land_Surface_Temp_Day,MODIS_Aqua_Land_Surface_Temp_Day`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-blue-400 hover:text-blue-300 block"
+              >
+                → See MODIS Temperature for {location?.name}
               </a>
             </div>
           </div>

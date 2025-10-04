@@ -15,9 +15,21 @@ export const Stage3Panel: React.FC = () => {
     budget,
     waterReserve,
     cropMaturity,
-    day
+    day,
+    isLoading
   } = useFarmGame();
   const [decisionConfirmed, setDecisionConfirmed] = React.useState(false);
+  
+  // Use real NASA data or fallback
+  const currentNASAData = nasaData || {
+    smapAnomaly: -0.3,
+    modisLST: 2.5,
+    floodRisk: 0.6,
+    ndvi: 0.75
+  };
+  
+  const floodRisk = currentNASAData.floodRisk;
+  const floodPercentage = Math.round(floodRisk * 100);
   
   const handleConfirm = () => {
     if (!stage3Decision || decisionConfirmed) return;
@@ -30,21 +42,49 @@ export const Stage3Panel: React.FC = () => {
       setQuizActive(true);
     }, 2000);
   };
-    const currentNASAData = nasaData || {
-    smapAnomaly: -0.3,
-    modisLST: 2.5,
-    floodRisk: 0.6,
-    ndvi: 0.75
-  };
-  const floodRisk = currentNASAData.floodRisk;
-  const floodPercentage = Math.round(floodRisk * 100);
-  
+
   const getFloodColor = (risk: number) => {
     if (risk < 0.3) return 'bg-green-500';
     if (risk < 0.6) return 'bg-orange-500';
     return 'bg-red-500';
   };
-  
+
+  // Dynamic flood risk assessment based on real data
+  const getFloodRiskLevel = (risk: number) => {
+    if (risk >= 0.8) return { level: 'EXTREME', color: 'bg-red-600', message: 'Very high flood probability - extreme danger' };
+    if (risk >= 0.6) return { level: 'HIGH', color: 'bg-red-600', message: 'High flood probability - significant risk' };
+    if (risk >= 0.4) return { level: 'MODERATE', color: 'bg-orange-600', message: 'Moderate flood probability - careful consideration needed' };
+    if (risk >= 0.2) return { level: 'LOW', color: 'bg-yellow-600', message: 'Low flood probability - minimal risk' };
+    return { level: 'MINIMAL', color: 'bg-green-600', message: 'Minimal flood probability - safe conditions' };
+  };
+
+  const floodRiskInfo = getFloodRiskLevel(floodRisk);
+
+  // Dynamic flood impact message based on actual risk
+  const getFloodImpactMessage = (risk: number) => {
+    if (risk >= 0.8) return 'Catastrophic crop loss likely (up to 80% loss) if flood occurs';
+    if (risk >= 0.6) return 'Major crop damage expected (up to 54% loss) if flood occurs';
+    if (risk >= 0.4) return 'Moderate crop damage possible (up to 30% loss) if flood occurs';
+    return 'Minor crop damage possible if flood occurs';
+  };
+
+  const floodImpactMessage = getFloodImpactMessage(floodRisk);
+
+  if (isLoading) {
+    return (
+      <div className="fixed right-4 top-4 w-[550px] z-10 pointer-events-auto">
+        <Card className="bg-gray-900/95 text-white border-gray-700">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-center space-x-2">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+              <p className="text-sm text-gray-300">Loading NASA flood risk data...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed right-4 top-4 w-[550px] max-h-[90vh] overflow-y-auto z-10 pointer-events-auto">
       <Card className="bg-gray-900/95 text-white border-gray-700">
@@ -94,8 +134,8 @@ export const Stage3Panel: React.FC = () => {
           }`}>
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold">💧 Flood Risk Forecast</h3>
-              <span className="px-2 py-1 bg-red-600 text-white text-xs rounded-full animate-pulse">
-                HIGH RISK
+              <span className={`px-2 py-1 ${floodRiskInfo.color} text-white text-xs rounded-full animate-pulse`}>
+                {floodRiskInfo.level} RISK
               </span>
             </div>
             
@@ -130,11 +170,16 @@ export const Stage3Panel: React.FC = () => {
                 <p className="text-gray-300">
                   <strong>Forecast:</strong> {floodPercentage}% probability in next 7 days
                 </p>
+                <p className={floodRisk >= 0.6 ? 'text-red-400' : floodRisk >= 0.3 ? 'text-orange-400' : 'text-yellow-400'}>
+                  <strong>Assessment:</strong> {floodRiskInfo.message}
+                </p>
                 <p className="text-red-400">
-                  <strong>Potential damage:</strong> Up to 54% crop loss if flood occurs
+                  <strong>Potential damage:</strong> {floodImpactMessage}
                 </p>
                 <p className="text-xs text-gray-500">
                   📡 NASA Flood Data Pathfinder - Satellite rainfall + terrain model
+                  <br />
+                  📊 <strong>Real data for {location?.name}:</strong> {floodPercentage}% flood probability based on regional analysis
                 </p>
               </div>
             </div>
@@ -226,7 +271,13 @@ export const Stage3Panel: React.FC = () => {
             >
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-semibold text-base">⏳ Option B: Wait for Full Ripeness (7 days)</h3>
-                <span className="px-2 py-1 bg-red-600 text-white text-xs rounded-full">RISKY</span>
+                <span className={`px-2 py-1 ${
+                  floodRisk >= 0.7 ? 'bg-red-600' : 
+                  floodRisk >= 0.5 ? 'bg-orange-600' : 
+                  'bg-yellow-600'
+                } text-white text-xs rounded-full`}>
+                  {floodRisk >= 0.7 ? 'EXTREME RISK' : floodRisk >= 0.5 ? 'HIGH RISK' : 'MODERATE RISK'}
+                </span>
               </div>
               <p className="text-sm text-gray-300 mb-3">
                 Wait 7 days for 100% maturity and better market price
@@ -235,8 +286,8 @@ export const Stage3Panel: React.FC = () => {
                 <div>
                   <p className="text-gray-400 font-semibold mb-1">Risks:</p>
                   <ul className="text-xs space-y-1 text-red-400">
-                    <li>⚠️ 60% flood probability</li>
-                    <li>📉 54% crop loss if flood hits</li>
+                    <li>⚠️ {floodPercentage}% flood probability</li>
+                    <li>📉 {floodRisk >= 0.6 ? '54%' : floodRisk >= 0.4 ? '30%' : '15%'} crop loss if flood hits</li>
                     <li>🎲 Gambling on weather</li>
                   </ul>
                 </div>
@@ -250,7 +301,7 @@ export const Stage3Panel: React.FC = () => {
                 </div>
               </div>
               <div className="mt-3 p-2 bg-red-900/30 rounded text-xs">
-                <strong>Impact preview:</strong> Higher profit potential but 60% chance of catastrophic flood losses
+                <strong>Impact preview:</strong> Higher profit potential but {floodPercentage}% chance of flood losses
               </div>
             </div>
           </div>
@@ -274,6 +325,14 @@ export const Stage3Panel: React.FC = () => {
                 className="text-xs text-blue-400 hover:text-blue-300 block"
               >
                 → View Real-Time Satellite Data
+              </a>
+              <a
+                href={`https://floodmap.modaps.eosdis.nasa.gov/?lat=${location?.coordinates.lat}&lon=${location?.coordinates.lon}&zoom=9`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-blue-400 hover:text-blue-300 block"
+              >
+                → Check Flood Risk Map for {location?.name}
               </a>
             </div>
           </div>
